@@ -59,7 +59,7 @@
     </script>
 
 
-    <h1>Profil des boxeurs depuis un champ déroulant. version 2.1</h1>
+    <h1>Profil des boxeurs depuis un champ déroulant. version 2.2</h1>
 
     <!-- Champ déroulant -->
     <label for="boxeurSelect">Choisissez un boxeur :</label>
@@ -93,10 +93,10 @@
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
                     option.value = boxeur.id;
-                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`; // juste nom + prénom pour le select
+                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`; // juste nom + prénom
                     // stocker les infos supplémentaires dans dataset
                     option.dataset.licenceDate = boxeur.LicenceExpireDate;
-                    option.dataset.isPaid = boxeur.IsLicencePaid ? 1 : 0; // booléen 1 ou 0
+                    option.dataset.isPaid = boxeur.IsLicencePaid ? "Payé" : "Non Payé";
                     select.appendChild(option);
                 });
 
@@ -115,8 +115,10 @@
             result.innerText = `ID: ${selectedId}, Nom: ${selectedText}, Licence expire: ${licenceDate}, Payé: ${isPaid}`;
         });
 
+        // Charger les boxeurs au chargement de la page
         loadBoxeursSelect();
     </script>
+
 
 
 
