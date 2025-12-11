@@ -3,32 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Gestion Présences 0.12</title>
+    <title>Boxe Tool - Gestion Prï¿½sences 0.11</title>
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur 0.12</h1>
+    <h1>Enregistrer la prï¿½sence d'un boxeur 0.11</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
-        <option value="">-- Sélectionnez --</option>
+        <option value="">-- Sï¿½lectionnez --</option>
     </select>
 
     <div style="margin-top:10px;">
-        <button data-statut="Present">Présent</button>
+        <button data-statut="Present">Prï¿½sent</button>
         <button data-statut="Retard">Retard</button>
         <button data-statut="Blessure">Blessure</button>
         <button data-statut="Exclusion">Exclu</button>
-        <button id="supprimerBtn" style="margin-left:10px;">Supprimer</button>
     </div>
 
     <div id="result" style="margin-top:20px; font-weight:bold;"></div>
 
     <script>
-        const API_KEY = 'VOTRE_API_KEY';
-        const SUPABASE_URL = 'VOTRE_SUPABASE_URL';
+        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
+        const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
 
-        // --- Charger les boxeurs ---
+        // --- Charger les boxeurs pour le menu ---
         async function loadBoxeursSelect() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
@@ -38,6 +37,7 @@
                     }
                 });
                 const data = await res.json();
+
                 const select = document.getElementById('boxeurSelect');
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
@@ -51,21 +51,32 @@
             }
         }
 
-        // --- Enregistrer ou mettre à jour ---
-        async function enregistrerPresence(boxeurId, statut) {
+        // --- Supprimer une prï¿½sence existante ---
+        async function deletePresence(boxeurId, today) {
             try {
-                const today = new Date().toISOString().split('T')[0];
-
-                // DELETE éventuel pour le même jour
-                await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
                     method: 'DELETE',
                     headers: {
                         'apikey': API_KEY,
                         'Authorization': 'Bearer ' + API_KEY
                     }
                 });
+                return res.ok;
+            } catch (err) {
+                console.error("Erreur deletePresence :", err);
+                return false;
+            }
+        }
 
-                // INSERT
+        // --- Enregistrer la prï¿½sence (delete si existe puis insert) ---
+        async function enregistrerPresence(boxeurId, statut) {
+            try {
+                const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+                // Delete ï¿½ventuelle prï¿½sence existante
+                await deletePresence(boxeurId, today);
+
+                // Insert la nouvelle prï¿½sence
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
                     method: 'POST',
                     headers: {
@@ -80,53 +91,31 @@
                     })
                 });
 
-                if (!res.ok) throw new Error('Erreur insertion présence');
-
-                document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
-            } catch (err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
-            }
-        }
-
-        // --- Supprimer la présence ---
-        async function supprimerPresence(boxeurId) {
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY
-                    }
-                });
-                if (res.ok) {
-                    document.getElementById('result').innerText = 'Présence annulée';
-                } else {
-                    document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error('Erreur insertion prï¿½sence : ' + text);
                 }
+
+                document.getElementById('result').innerText = `Prï¿½sence enregistrï¿½e : ${statut}`;
             } catch (err) {
                 console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
+                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement (voir console)';
             }
         }
 
-        // --- Listeners ---
+        // --- Listeners boutons ---
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeursSelect();
 
             document.querySelectorAll('button[data-statut]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const select = document.getElementById('boxeurSelect');
-                    if (!select.value) { alert('Veuillez choisir un boxeur'); return; }
+                    if (!select.value) {
+                        alert('Veuillez choisir un boxeur');
+                        return;
+                    }
                     enregistrerPresence(select.value, btn.dataset.statut);
                 });
-            });
-
-            document.getElementById('supprimerBtn').addEventListener('click', () => {
-                const select = document.getElementById('boxeurSelect');
-                if (!select.value) { alert('Veuillez choisir un boxeur'); return; }
-                supprimerPresence(select.value);
             });
         });
     </script>
