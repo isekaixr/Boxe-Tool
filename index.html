@@ -59,7 +59,7 @@
     </script>
 
 
-    <h1>Profil des boxeurs depuis un champ déroulant. version 5</h1>
+    <h1>Profil des boxeurs depuis un champ déroulant. version 2.1</h1>
 
     <!-- Champ déroulant -->
     <label for="boxeurSelect">Choisissez un boxeur :</label>
@@ -75,11 +75,10 @@
         const select = document.getElementById('boxeurSelect');
         const result = document.getElementById('selectedResult');
 
-        // Nouveau fetch simple, cohérent avec ton système existant
         async function loadBoxeursSelect() {
             try {
                 const res = await fetch(
-                    "https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName",
+                    "https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName,LicenceExpireDate,IsLicencePaid",
                     {
                         headers: {
                             "apikey": API_KEY,
@@ -94,8 +93,10 @@
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
                     option.value = boxeur.id;
-                    option.profilnameContent = `${boxeur.LastName} ${boxeur.FirstName}`;
-                    option.licenceContent = `${boxeur.LicenceExpireDate} ${boxeur.IsLicencePaid}`;
+                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`; // juste nom + prénom pour le select
+                    // stocker les infos supplémentaires dans dataset
+                    option.dataset.licenceDate = boxeur.LicenceExpireDate;
+                    option.dataset.isPaid = boxeur.IsLicencePaid ? 1 : 0; // booléen 1 ou 0
                     select.appendChild(option);
                 });
 
@@ -106,15 +107,17 @@
 
         // Tester la sélection
         document.getElementById('showSelected').addEventListener('click', () => {
-            const selectedId = select.value;
-            const selectedText = select.options[select.selectedIndex].profilname;
-            const selectedLicence = select.options[select.selectedIndex].licence;
-            result.innerText = `ID: ${selectedId}, Nom: ${selectedText}, Licence: ${selectedLicence}`;
+            const selectedOption = select.options[select.selectedIndex];
+            const selectedId = selectedOption.value;
+            const selectedText = selectedOption.textContent;
+            const licenceDate = selectedOption.dataset.licenceDate;
+            const isPaid = selectedOption.dataset.isPaid;
+            result.innerText = `ID: ${selectedId}, Nom: ${selectedText}, Licence expire: ${licenceDate}, Payé: ${isPaid}`;
         });
 
-        // Charger les boxeurs au chargement de la page
         loadBoxeursSelect();
     </script>
+
 
 
 </body>
