@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Gestion Présences 0.9</title>
+    <title>Boxe Tool - Gestion Présences 1.0</title>
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur 0.9</h1>
+    <h1>Enregistrer la présence d'un boxeur 1.0</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
@@ -56,13 +56,12 @@
             try {
                 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?on_conflict=boxeur_id,date_cours`, {
                     method: 'POST',
                     headers: {
                         'apikey': API_KEY,
                         'Authorization': 'Bearer ' + API_KEY,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'resolution=merge-duplicates' // <-- UPSERT
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         boxeur_id: boxeurId,
