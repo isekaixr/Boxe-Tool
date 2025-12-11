@@ -3,34 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Licences et Cotisations 0.1</title>
+    <title>Boxe Tool - Licences et Cotisations</title>
 </head>
 <body>
 
-    <h1>Gérer les licences et cotisations 0.1</h1>
+    <h1>Gestion Licences et Cotisations 0.2</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
         <option value="">-- Sélectionnez --</option>
     </select>
 
-    <div style="margin-top:10px;">
-        <label>Licence :</label>
-        <input type="date" id="licenceDate" placeholder="Date d'échéance">
-        <select id="licenceStatus">
-            <option value="En cours">En cours</option>
-            <option value="Anglaise">Anglaise</option>
-        </select>
-        <button id="updateLicence">Mettre à jour licence</button>
+    <div style="margin-top:20px;">
+        <label>Licence expire le : <input type="date" id="licenceDate"></label>
+        <label>Cotisation payée jusqu'au : <input type="date" id="cotisationDate"></label>
+        <label>Cotisation type (1,5,10 ou 0 pour séance 3€) : <input type="number" id="cotisationType" min="0" max="10"></label>
+        <label>Paiement effectué : <input type="checkbox" id="cotisationPayee"></label>
     </div>
 
     <div style="margin-top:10px;">
-        <label>Cotisation :</label>
-        <input type="number" id="cotisationType" placeholder="Nombre de mois">
-        <input type="checkbox" id="cotisationPaid"> Payé
-        <input type="date" id="cotisationExpireDate" placeholder="Échéance">
-        <input type="date" id="cotisationPaymentDate" placeholder="Date de paiement séance 3€">
-        <button id="updateCotisation">Mettre à jour cotisation</button>
+        <button id="updateButton">Mettre à jour</button>
     </div>
 
     <div id="result" style="margin-top:20px; font-weight:bold;"></div>
@@ -39,11 +31,14 @@
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
 
-        // Charger les boxeurs
+        // --- Charger les boxeurs ---
         async function loadBoxeursSelect() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
-                    headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
+                    headers: {
+                        "apikey": API_KEY,
+                        "Authorization": "Bearer " + API_KEY
+                    }
                 });
                 const data = await res.json();
                 const select = document.getElementById('boxeurSelect');
@@ -53,78 +48,54 @@
                     option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
                     select.appendChild(option);
                 });
-            } catch (error) {
-                console.error("Erreur loadBoxeursSelect :", error);
-                document.getElementById('result').innerText = "Erreur lors du chargement des boxeurs";
-            }
-        }
-
-        // Mettre à jour licence
-        async function updateLicence(boxeurId) {
-            const date = document.getElementById('licenceDate').value;
-            const status = document.getElementById('licenceStatus').value;
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/LicencesEtCotisations`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'resolution=merge-duplicates'
-                    },
-                    body: JSON.stringify({ boxeur_id: boxeurId, LicenceExpireDate: date, LicenceStatus: status })
-                });
-                if (!res.ok) throw new Error('Erreur mise à jour licence');
-                document.getElementById('result').innerText = `Licence mise à jour : ${status} jusqu'au ${date}`;
             } catch (err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de la mise à jour de la licence';
+                console.error("Erreur loadBoxeursSelect :", err);
+                document.getElementById('result').innerText = "Erreur chargement boxeurs";
             }
         }
 
-        // Mettre à jour cotisation
-        async function updateCotisation(boxeurId) {
-            const type = parseInt(document.getElementById('cotisationType').value) || 0;
-            const paid = document.getElementById('cotisationPaid').checked;
-            const expire = document.getElementById('cotisationExpireDate').value;
-            const payment = document.getElementById('cotisationPaymentDate').value;
+        // --- Mettre à jour la licence/cotisation ---
+        async function updateLicence() {
+            const boxeurId = document.getElementById('boxeurSelect').value;
+            if (!boxeurId) {
+                alert('Veuillez choisir un boxeur');
+                return;
+            }
+
+            const licenceDate = document.getElementById('licenceDate').value;
+            const cotisationDate = document.getElementById('cotisationDate').value;
+            const cotisationType = parseInt(document.getElementById('cotisationType').value) || 0;
+            const cotisationPayee = document.getElementById('cotisationPayee').checked;
+
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/LicencesEtCotisations`, {
                     method: 'POST',
                     headers: {
                         'apikey': API_KEY,
                         'Authorization': 'Bearer ' + API_KEY,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'resolution=merge-duplicates'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         boxeur_id: boxeurId,
-                        CotisationType: type,
-                        CotisationPaid: paid,
-                        CotisationExpireDate: expire,
-                        CotisationPaymentDate: payment
+                        licence_echeance: licenceDate || null,
+                        cotisation_echeance: cotisationDate || null,
+                        cotisation_type: cotisationType,
+                        cotisation_payee: cotisationPayee
                     })
                 });
-                if (!res.ok) throw new Error('Erreur mise à jour cotisation');
-                document.getElementById('result').innerText = `Cotisation mise à jour : ${type} mois, payé: ${paid}`;
+
+                if (!res.ok) throw new Error(await res.text());
+
+                document.getElementById('result').innerText = 'Licence/Cotisation mise à jour avec succès';
             } catch (err) {
                 console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de la mise à jour de la cotisation';
+                document.getElementById('result').innerText = 'Erreur mise à jour licence/cotisation';
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeursSelect();
-            document.getElementById('updateLicence').addEventListener('click', () => {
-                const select = document.getElementById('boxeurSelect');
-                if (!select.value) { alert('Veuillez choisir un boxeur'); return; }
-                updateLicence(select.value);
-            });
-            document.getElementById('updateCotisation').addEventListener('click', () => {
-                const select = document.getElementById('boxeurSelect');
-                if (!select.value) { alert('Veuillez choisir un boxeur'); return; }
-                updateCotisation(select.value);
-            });
+            document.getElementById('updateButton').addEventListener('click', updateLicence);
         });
     </script>
 
