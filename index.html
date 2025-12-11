@@ -7,7 +7,7 @@
 </head>
 <body>
 
-    <h1>Liste des Boxeurs - Bouton fonctionnel</h1>
+    <h1>Liste des Boxeurs - Resultat via bouton</h1>
 
     <!-- Div pour afficher la liste des boxeurs -->
     <div id="liste"></div>
@@ -49,11 +49,11 @@
             });
         }
 
-        // --- Initialisation ---
-        window.addEventListener("DOMContentLoaded", async () => {
-            const boxeurs = await getBoxeurs();
-            afficherBoxeurs(boxeurs);
-        });
+        //// --- Initialisation ---
+        //window.addEventListener("DOMContentLoaded", async () => {
+        //    const boxeurs = await getBoxeurs();
+        //    afficherBoxeurs(boxeurs);
+        //});
 
         //window.addEventListener("DOMContentLoaded", async() => {
         //    const elonDiv = document.getElementById("elon");
@@ -67,10 +67,19 @@
             document.body.appendChild(bouton);
 
             bouton.addEventListener("click", () => {
-                const resultDiv = document.getElementById("result");
-                resultDiv.textContent = "Bonjour Bounty";
+          //      const resultDiv = document.getElementById("result");
+        //        resultDiv.textContent = "Bonjour Bounty";
+
+                // --- Initialisation ---
+                window.addEventListener("DOMContentLoaded", async () => {
+                    const boxeurs = await getBoxeurs();
+                    afficherBoxeurs(boxeurs);
+                });
+
             });
         });
+
+        
 
     </script>
 
