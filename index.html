@@ -11,6 +11,8 @@
 
     <!-- Div pour afficher la liste des boxeurs -->
     <div id="liste"></div>
+
+    <div id="elon"></div>
    
     <!--Le web c'est de la merde-->
     <script>
@@ -50,7 +52,12 @@
             const boxeurs = await getBoxeurs();
             afficherBoxeurs(boxeurs);
         });
-            
+
+        window.addEventListener("DOMContentLoaded", async() => {
+            const elonDiv = document.getElementById("elon");
+            elonDiv.innerHTML = "Elon Musk est le meilleur développeur web de tous les temps.";
+        });
+
 
     </script>
 
