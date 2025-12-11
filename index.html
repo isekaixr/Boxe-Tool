@@ -56,10 +56,54 @@
                 afficherBoxeurs(boxeurs);
             });
         });
-        
+
     </script>
 
 
+    <!-- Champ déroulant -->
+    <label for="boxeurSelect">Choisissez un boxeur :</label>
+    <select id="boxeurSelect">
+        <option value="">-- Sélectionnez --</option>
+    </select>
+
+    <!-- Bouton pour tester la sélection -->
+    <button id="showSelected">Afficher le boxeur choisi</button>
+    <div id="selectedResult"></div>
+
+    <script>
+        const select = document.getElementById('boxeurSelect');
+        const result = document.getElementById('selectedResult');
+
+        // Fetch des boxeurs depuis Supabase
+        async function loadBoxeurs() {
+            const { data, error } = await supabase
+                .from('boxeurs')
+                .select('id, nom, prenom'); // récupère id, nom et prénom
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            // Remplir le select
+            data.forEach(boxeur => {
+                const option = document.createElement('option');
+                option.value = boxeur.id;            // id en valeur
+                option.text = `${boxeur.nom} ${boxeur.prenom}`; // affichage nom + prénom
+                select.appendChild(option);
+            });
+        }
+
+        // Tester la sélection
+        document.getElementById('showSelected').addEventListener('click', () => {
+            const selectedId = select.value;
+            const selectedText = select.options[select.selectedIndex].text;
+            result.innerText = `ID: ${selectedId}, Nom: ${selectedText}`;
+        });
+
+        // Charger les boxeurs au chargement de la page
+        loadBoxeurs();
+    </script>
 
 
 
