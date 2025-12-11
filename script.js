@@ -29,14 +29,4 @@ function afficherBoxeurs(boxeurs) {
     });
 }
 
-// --- Bouton Hello World ---
-const btnHello = document.getElementById("btnHello");
-btnHello.addEventListener("click", () => {
-    alert("Hello World !");
-});
-
-// --- Initialisation ---
-window.addEventListener("DOMContentLoaded", async () => {
-    const boxeurs = await getBoxeurs();
-    afficherBoxeurs(boxeurs);
-});
+afficherBoxeurs(boxeurs);
