@@ -7,7 +7,7 @@ export function afficherBoxeurs(boxeurs) {
 
     boxeurs.forEach(b => {
         const div = document.createElement("div");
-        div.textContent = `${b.LastName}`; // On n'affiche pas l'id
+        div.textContent = `${b.LastName} ${b.FirstName}`; // On n'affiche pas l'id
         div.style.padding = "6px 0";
         container.appendChild(div);
     });

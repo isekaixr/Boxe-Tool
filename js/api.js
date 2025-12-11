@@ -6,7 +6,7 @@ const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 
 // Récupérer tous les boxeurs
 export async function getBoxeurs() {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
         headers: {
             "apikey": API_KEY,
             "Authorization": "Bearer " + API_KEY
