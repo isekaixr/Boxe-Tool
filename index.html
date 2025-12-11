@@ -7,7 +7,7 @@
 </head>
 <body>
 
-    <h1>Liste des Boxeurs via bouton</h1>
+    <h1>Liste des Boxeurs dans le listener bouton</h1>
 
 
     <script>
@@ -45,15 +45,22 @@
             bouton.textContent = "Afficher les boxeurs";
             document.body.appendChild(bouton);
 
+            const resultDiv = document.createElement("div");
+            resultDiv.id = "result";
+            resultDiv.style.marginTop = "20px";
+            resultDiv.style.fontWeight = "bold";
+            document.body.appendChild(resultDiv); // <-- div après le bouton
+
             bouton.addEventListener("click", async () => {
                 const boxeurs = await getBoxeurs();
                 afficherBoxeurs(boxeurs);
             });
         });
+        
     </script>
 
-    <!-- Div pour recevoir le résultat du fetch -->
-    <div id="result" style="margin-top:20px; font-weight:bold;"></div>
+
+
 
 
 </body>
