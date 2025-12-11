@@ -16,7 +16,19 @@
 
     <div style="margin-top:15px;">
         <h3>Licence</h3>
-        <label>Type: <input type="text" id="licencetype"></label><br>
+
+        <!--<label>Type: <input type="text" id="licencetype"></label><br>-->
+
+        <label>
+            Type:
+            <select id="licencetype">
+                <option value="">-- Sélectionnez --</option>
+                <option value="Boxe Anglaise">Boxe Anglaise</option>
+                <option value="Boxe Française">Boxe Française</option>
+                <option value="En Cours">En Cours</option>
+            </select>
+        </label><br>
+
         <label>Date expiration: <input type="date" id="licenceexpiredate"></label><br>
         <label>Status: <span id="licencestatus"></span></label>
     </div>
