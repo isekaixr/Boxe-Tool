@@ -7,7 +7,7 @@
 </head>
 <body>
 
-    <h1>Liste des Boxeurs web elon</h1>
+    <h1>Liste des Boxeurs ctrl k c</h1>
 
     <!-- Div pour afficher la liste des boxeurs -->
     <div id="liste"></div>
@@ -53,11 +53,22 @@
             afficherBoxeurs(boxeurs);
         });
 
-        window.addEventListener("DOMContentLoaded", async() => {
-            const elonDiv = document.getElementById("elon");
-            elonDiv.innerHTML = "Elon Musk est le meilleur développeur web de tous les temps.";
-        });
+        //window.addEventListener("DOMContentLoaded", async() => {
+        //    const elonDiv = document.getElementById("elon");
+        //    elonDiv.innerHTML = "Elon Musk est le meilleur développeur web de tous les temps.";
+        //});
 
+        // --- Bouton pour afficher "Bonjour Bounty" ---
+        window.addEventListener("DOMContentLoaded", () => {
+            const bouton = document.createElement("button");
+            bouton.textContent = "Dire Bonjour Bounty";
+            document.body.appendChild(bouton);
+
+            bouton.addEventListener("click", () => {
+                const resultDiv = document.getElementById("result");
+                resultDiv.textContent = "Bonjour Bounty";
+            });
+        });
 
     </script>
 
