@@ -34,7 +34,7 @@
             resultDiv.innerHTML = ""; // Vide avant affichage
             boxeurs.forEach(b => {
                 const div = document.createElement("div");
-                div.textContent = `${b.FirstName || ''} ${b.LastName || ''}`;
+                div.textContent = `${b.LastName || ''} ${b.FirstName || ''}`;
                 resultDiv.appendChild(div);
             });
         }
@@ -58,6 +58,7 @@
         });
 
     </script>
+
 
     <h1>Liste des boxeurs depuis un champ déroulant. 3</h1>
 
