@@ -7,7 +7,7 @@
 </head>
 <body>
 
-    <h1>Liste des Boxeurs - Resultat via bouton</h1>
+    <h1>Liste des Boxeurs - Resultat via bouton qui rend fou</h1>
 
     <!-- Div pour afficher la liste des boxeurs -->
     <div id="liste"></div>
@@ -18,36 +18,7 @@
 
     <!--Le web c'est de la merde-->
     <script>
-        // --- Configuration Supabase ---
-        const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
-        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
-
-        // --- Fonction pour récupérer les boxeurs ---
-        async function getBoxeurs() {
-            try {
-                const res = await fetch(SUPABASE_URL, {
-                    headers: {
-                        "apikey": API_KEY,
-                        "Authorization": "Bearer " + API_KEY
-                    }
-                });
-                return await res.json();
-            } catch (error) {
-                console.error("Erreur fetch Supabase :", error);
-                return [];
-            }
-        }
-
-        // --- Fonction pour afficher les boxeurs ---
-        function afficherBoxeurs(boxeurs) {
-            const listeDiv = document.getElementById("liste");
-            listeDiv.innerHTML = "";
-            boxeurs.forEach(b => {
-                const div = document.createElement("div");
-                div.textContent = `${b.FirstName || ''} ${b.LastName || ''}`;
-                listeDiv.appendChild(div);
-            });
-        }
+        
 
         //// --- Initialisation ---
         //window.addEventListener("DOMContentLoaded", async () => {
@@ -63,13 +34,42 @@
         // --- Bouton pour afficher "Bonjour Bounty" ---
         window.addEventListener("DOMContentLoaded", () => {
             const bouton = document.createElement("button");
-            bouton.textContent = "Dire Bonjour Bounty";
+            bouton.textContent = "Resultats";
             document.body.appendChild(bouton);
 
             bouton.addEventListener("click", () => {
           //      const resultDiv = document.getElementById("result");
         //        resultDiv.textContent = "Bonjour Bounty";
+                // --- Configuration Supabase ---
+                const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
+                const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
 
+                // --- Fonction pour récupérer les boxeurs ---
+                async function getBoxeurs() {
+                    try {
+                        const res = await fetch(SUPABASE_URL, {
+                            headers: {
+                                "apikey": API_KEY,
+                                "Authorization": "Bearer " + API_KEY
+                            }
+                        });
+                        return await res.json();
+                    } catch (error) {
+                        console.error("Erreur fetch Supabase :", error);
+                        return [];
+                    }
+                }
+
+                // --- Fonction pour afficher les boxeurs ---
+                function afficherBoxeurs(boxeurs) {
+                    const listeDiv = document.getElementById("liste");
+                    listeDiv.innerHTML = "";
+                    boxeurs.forEach(b => {
+                        const div = document.createElement("div");
+                        div.textContent = `${b.FirstName || ''} ${b.LastName || ''}`;
+                        listeDiv.appendChild(div);
+                    });
+                }
                 // --- Initialisation ---
                 window.addEventListener("DOMContentLoaded", async () => {
                     const boxeurs = await getBoxeurs();
