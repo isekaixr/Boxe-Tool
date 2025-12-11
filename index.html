@@ -9,7 +9,6 @@
 
     <h1>Liste des Boxeurs dans le listener bouton</h1>
 
-
     <script>
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
@@ -60,7 +59,7 @@
     </script>
 
 
-    <h1>Liste des boxeurs depuis un champ déroulant. 3</h1>
+    <h1>Profil des boxeurs depuis un champ déroulant. 4</h1>
 
     <!-- Champ déroulant -->
     <label for="boxeurSelect">Choisissez un boxeur :</label>
@@ -95,7 +94,8 @@
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
                     option.value = boxeur.id;
-                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
+                    option.profilnameContent = `${boxeur.LastName} ${boxeur.FirstName}`;
+                    option.licenceContent = `${boxeur.LicenceExpireDate} ${boxeur.IsLicencePaid}`;
                     select.appendChild(option);
                 });
 
@@ -107,8 +107,9 @@
         // Tester la sélection
         document.getElementById('showSelected').addEventListener('click', () => {
             const selectedId = select.value;
-            const selectedText = select.options[select.selectedIndex].text;
-            result.innerText = `ID: ${selectedId}, Nom: ${selectedText}`;
+            const selectedText = select.options[select.selectedIndex].profilname;
+            const selectedLicence = select.options[select.selectedIndex].licence;
+            result.innerText = `ID: ${selectedId}, Nom: ${selectedText}, Licence: ${selectedLicence}`;
         });
 
         // Charger les boxeurs au chargement de la page
