@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool</title>
+    <title>Boxe Tool - MVP</title>
 </head>
 <body>
 
@@ -15,8 +15,36 @@
     <!-- Div pour afficher la liste des boxeurs -->
     <div id="liste"></div>
 
-    <!-- Scripts JS -->
-    <script type="module" src="js/main.js"></script>
+    <!-- Script JS tout-en-un -->
+    <script>
+        // --- Données simulées pour MVP ---
+        const boxeurs = [
+            { FirstName: 'Kevin', LastName: 'Lambrette' },
+            { FirstName: 'Bounty', LastName: '' }
+        ];
+
+        // --- Fonction pour afficher les boxeurs ---
+        function afficherBoxeurs(boxeurs) {
+            const listeDiv = document.getElementById("liste");
+            listeDiv.innerHTML = "";
+            boxeurs.forEach(b => {
+                const div = document.createElement("div");
+                div.textContent = `${b.FirstName || ''} ${b.LastName || ''}`;
+                listeDiv.appendChild(div);
+            });
+        }
+
+        // --- Bouton Hello World ---
+        const btnHello = document.getElementById("btnHello");
+        btnHello.addEventListener("click", () => {
+            alert("Hello World !");
+        });
+
+        // --- Initialisation ---
+        window.addEventListener("DOMContentLoaded", () => {
+            afficherBoxeurs(boxeurs);
+        });
+    </script>
 
 </body>
 </html>
