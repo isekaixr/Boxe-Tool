@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Gestion Présences 0.7</title>
+    <title>Boxe Tool - Gestion Présences 0.9</title>
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur 0.7</h1>
+    <h1>Enregistrer la présence d'un boxeur 0.9</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
@@ -24,10 +24,10 @@
     <div id="result" style="margin-top:20px; font-weight:bold;"></div>
 
     <script>
-        const API_KEY = 'TON_API_KEY_ICI';
+        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
 
-        // Charger les boxeurs pour le menu
+        // --- Charger les boxeurs pour le menu ---
         async function loadBoxeursSelect() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
@@ -37,6 +37,7 @@
                     }
                 });
                 const data = await res.json();
+
                 const select = document.getElementById('boxeurSelect');
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
@@ -46,10 +47,11 @@
                 });
             } catch (error) {
                 console.error("Erreur loadBoxeursSelect :", error);
+                document.getElementById('result').innerText = "Erreur lors du chargement des boxeurs";
             }
         }
 
-        // Enregistrer ou mettre à jour la présence avec UPSERT
+        // --- Enregistrer ou mettre à jour la présence ---
         async function enregistrerPresence(boxeurId, statut) {
             try {
                 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -60,7 +62,7 @@
                         'apikey': API_KEY,
                         'Authorization': 'Bearer ' + API_KEY,
                         'Content-Type': 'application/json',
-                        'Prefer': 'resolution=merge-duplicates'
+                        'Prefer': 'resolution=merge-duplicates' // <-- UPSERT
                     },
                     body: JSON.stringify({
                         boxeur_id: boxeurId,
@@ -69,18 +71,22 @@
                     })
                 });
 
-                if (!res.ok) throw new Error('Erreur insertion ou update présence');
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error('Erreur insertion ou update présence : ' + text);
+                }
 
                 document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
             } catch (err) {
                 console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
+                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement (voir console)';
             }
         }
 
-        // Listeners boutons
+        // --- Listeners boutons ---
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeursSelect();
+
             document.querySelectorAll('button[data-statut]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const select = document.getElementById('boxeurSelect');
