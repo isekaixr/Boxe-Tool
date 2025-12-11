@@ -59,7 +59,7 @@
 
     </script>
 
-    <h1>Liste des boxeurs depuis un champ déroulant. 2</h1>
+    <h1>Liste des boxeurs depuis un champ déroulant. 3</h1>
 
     <!-- Champ déroulant -->
     <label for="boxeurSelect">Choisissez un boxeur :</label>
@@ -75,24 +75,32 @@
         const select = document.getElementById('boxeurSelect');
         const result = document.getElementById('selectedResult');
 
-        // Fetch des boxeurs depuis Supabase
-        async function loadBoxeurs() {
-            const { data, error } = await supabase
-                .from('Boxeurs')
-                .select('id, LastName, FirstName'); // respecter la casse des colonnes
+        // Nouveau fetch simple, cohérent avec ton système existant
+        async function loadBoxeursSelect() {
+            try {
+                const res = await fetch(
+                    "https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName",
+                    {
+                        headers: {
+                            "apikey": API_KEY,
+                            "Authorization": "Bearer " + API_KEY
+                        }
+                    }
+                );
 
-            if (error) {
-                console.error(error);
-                return;
+                const data = await res.json();
+                console.log("Boxeurs pour select :", data);
+
+                data.forEach(boxeur => {
+                    const option = document.createElement('option');
+                    option.value = boxeur.id;
+                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Erreur loadBoxeursSelect :", error);
             }
-
-            // Remplir le select
-            data.forEach(boxeur => {
-                const option = document.createElement('option');
-                option.value = boxeur.id; // id en valeur
-                option.text = `${boxeur.LastName} ${boxeur.FirstName}`; // affichage nom + prénom
-                select.appendChild(option);
-            });
         }
 
         // Tester la sélection
@@ -103,7 +111,7 @@
         });
 
         // Charger les boxeurs au chargement de la page
-        loadBoxeurs();
+        loadBoxeursSelect();
     </script>
 
 
