@@ -1,9 +1,7 @@
 // ui.js
-// Gestion de l'affichage dans le DOM
-
 export function afficherBoxeurs(boxeurs) {
     const listeDiv = document.getElementById("liste");
-    listeDiv.innerHTML = ""; // vide avant affichage
+    listeDiv.innerHTML = "";
 
     boxeurs.forEach(b => {
         const div = document.createElement("div");
