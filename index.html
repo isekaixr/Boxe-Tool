@@ -9,8 +9,6 @@
 
     <h1>Liste des Boxeurs via bouton</h1>
 
-    <!-- Div pour recevoir le résultat du fetch -->
-    <div id="result" style="margin-top:20px; font-weight:bold;"></div>
 
     <script>
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
@@ -53,6 +51,10 @@
             });
         });
     </script>
+
+    <!-- Div pour recevoir le résultat du fetch -->
+    <div id="result" style="margin-top:20px; font-weight:bold;"></div>
+
 
 </body>
 </html>
