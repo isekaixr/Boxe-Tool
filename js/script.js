@@ -1,5 +1,7 @@
-// Script minimal pour afficher Hello World à l'écran
+// Script externe minimal
 window.addEventListener("DOMContentLoaded", () => {
-    const outputDiv = document.getElementById("output");
-    outputDiv.textContent = "Hello World";
+    const listeDiv = document.getElementById("liste");
+    const div = document.createElement("div");
+    div.textContent = "Bonjour Kevin";
+    listeDiv.appendChild(div);
 });

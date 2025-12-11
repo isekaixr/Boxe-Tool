@@ -7,12 +7,12 @@
 </head>
 <body>
 
-    <h1>Liste des Boxeurs rest api</h1>
+    <h1>Liste des Boxeurs fetch.js</h1>
 
     <!-- Div pour afficher la liste des boxeurs -->
     <div id="liste"></div>
 
-    <script>
+    <!--<script>
         // --- Configuration Supabase ---
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
@@ -49,7 +49,11 @@
             const boxeurs = await getBoxeurs();
             afficherBoxeurs(boxeurs);
         });
-    </script>
+    </script>-->
+
+    <!-- Script externe qui affiche juste Bonjour Kevin -->
+    <!---<script src="js/script.js"></script>-->
+    <script src="js/fetch.js"></script>
 
 </body>
 </html>
