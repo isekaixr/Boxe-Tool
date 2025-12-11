@@ -7,13 +7,13 @@
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur 0.5</h1>
+    <h1>Enregistrer la présence d'un boxeur 0.6</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
         <option value="">-- Sélectionnez --</option>
     </select>
-e
+
     <div style="margin-top:10px;">
         <button data-statut="Present">Présent</button>
         <button data-statut="Retard">Retard</button>
@@ -50,7 +50,7 @@ e
             }
         }
 
-        // --- Enregistrer la présence ---
+        // --- Enregistrer ou mettre à jour la présence ---
         async function enregistrerPresence(boxeurId, statut) {
             try {
                 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -60,7 +60,8 @@ e
                     headers: {
                         'apikey': API_KEY,
                         'Authorization': 'Bearer ' + API_KEY,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Prefer': 'resolution=merge-duplicates' // <-- clé pour UPSERT
                     },
                     body: JSON.stringify({
                         boxeur_id: boxeurId,
@@ -69,7 +70,7 @@ e
                     })
                 });
 
-                if (!res.ok) throw new Error('Erreur insertion présence');
+                if (!res.ok) throw new Error('Erreur insertion ou update présence');
 
                 document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
             } catch (err) {
