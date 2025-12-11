@@ -7,16 +7,12 @@
 </head>
 <body>
 
-    <h1>Liste des Boxeurs + Bouton Resultats</h1>
+    <h1>Liste des Boxeurs via bouton</h1>
 
-    <!-- Div pour afficher la liste des boxeurs -->
-    <div id="liste" style="margin-bottom:20px;"></div>
-
-    <!-- Div pour recevoir le résultat du bouton -->
+    <!-- Div pour recevoir le résultat du fetch -->
     <div id="result" style="margin-top:20px; font-weight:bold;"></div>
 
     <script>
-        // --- Fonction fetch Supabase ---
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
 
@@ -36,28 +32,24 @@
         }
 
         function afficherBoxeurs(boxeurs) {
-            const listeDiv = document.getElementById("liste");
-            listeDiv.innerHTML = "";
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = ""; // Vide avant affichage
             boxeurs.forEach(b => {
                 const div = document.createElement("div");
                 div.textContent = `${b.FirstName || ''} ${b.LastName || ''}`;
-                listeDiv.appendChild(div);
+                resultDiv.appendChild(div);
             });
         }
 
-        // --- Initialisation de la liste au chargement de la page ---
-        window.addEventListener("DOMContentLoaded", async () => {
-            const boxeurs = await getBoxeurs();
-            afficherBoxeurs(boxeurs);
-
-            // --- Bouton Resultats ---
+        // --- Bouton pour déclencher le fetch ---
+        window.addEventListener("DOMContentLoaded", () => {
             const bouton = document.createElement("button");
-            bouton.textContent = "Resultats";
+            bouton.textContent = "Afficher les boxeurs";
             document.body.appendChild(bouton);
 
-            bouton.addEventListener("click", () => {
-                const resultDiv = document.getElementById("result");
-                resultDiv.textContent = "Bonjour Bounty";
+            bouton.addEventListener("click", async () => {
+                const boxeurs = await getBoxeurs();
+                afficherBoxeurs(boxeurs);
             });
         });
     </script>
