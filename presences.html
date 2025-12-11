@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Gestion Présences 1.0</title>
+    <title>Boxe Tool - Gestion Présences 0.11</title>
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur 1.0</h1>
+    <h1>Enregistrer la présence d'un boxeur 0.11</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
@@ -51,12 +51,33 @@
             }
         }
 
-        // --- Enregistrer ou mettre à jour la présence ---
+        // --- Supprimer une présence existante ---
+        async function deletePresence(boxeurId, today) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': API_KEY,
+                        'Authorization': 'Bearer ' + API_KEY
+                    }
+                });
+                return res.ok;
+            } catch (err) {
+                console.error("Erreur deletePresence :", err);
+                return false;
+            }
+        }
+
+        // --- Enregistrer la présence (delete si existe puis insert) ---
         async function enregistrerPresence(boxeurId, statut) {
             try {
                 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?on_conflict=boxeur_id,date_cours`, {
+                // Delete éventuelle présence existante
+                await deletePresence(boxeurId, today);
+
+                // Insert la nouvelle présence
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
                     method: 'POST',
                     headers: {
                         'apikey': API_KEY,
@@ -72,7 +93,7 @@
 
                 if (!res.ok) {
                     const text = await res.text();
-                    throw new Error('Erreur insertion ou update présence : ' + text);
+                    throw new Error('Erreur insertion présence : ' + text);
                 }
 
                 document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
