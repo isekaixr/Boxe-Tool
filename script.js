@@ -29,4 +29,8 @@ function afficherBoxeurs(boxeurs) {
     });
 }
 
-afficherBoxeurs(boxeurs);
+// --- Initialisation ---
+window.addEventListener("DOMContentLoaded", async () => {
+    const boxeurs = await getBoxeurs();
+    afficherBoxeurs(boxeurs);
+});
