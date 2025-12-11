@@ -7,7 +7,7 @@
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur</h1>
+    <h1>Enregistrer la présence d'un boxeur - version 0.2</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
@@ -24,75 +24,76 @@
     <div id="result" style="margin-top:20px; font-weight:bold;"></div>
 
     <script>
-const API_KEY = 'YOUR_API_KEY';
-const SUPABASE_URL = 'https://YOUR_SUPABASE_URL';
+        const API_KEY = 'YOUR_API_KEY';
+        const SUPABASE_URL = 'https://YOUR_SUPABASE_URL';
 
-// Charger les boxeurs dans le select
-async function loadBoxeursSelect() {
-    try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
-            headers: {
-                "apikey": API_KEY,
-                "Authorization": "Bearer " + API_KEY
+        // Charger les boxeurs dans le select
+        async function loadBoxeursSelect() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
+                    headers: {
+                        "apikey": API_KEY,
+                        "Authorization": "Bearer " + API_KEY,
+                        "Content-Type": "application/json"
+                    }
+                });
+                const data = await res.json();
+                const select = document.getElementById('boxeurSelect');
+
+                data.forEach(boxeur => {
+                    const option = document.createElement('option');
+                    option.value = boxeur.id;
+                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Erreur fetch Boxeurs :", err);
             }
-        });
-        const data = await res.json();
-        const select = document.getElementById('boxeurSelect');
+        }
 
-        data.forEach(boxeur => {
-            const option = document.createElement('option');
-            option.value = boxeur.id;
-            option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
-            select.appendChild(option);
-        });
-    } catch (err) {
-        console.error(err);
-    }
-}
+        // Enregistrer la présence
+        async function enregistrerPresence(boxeurId, statut) {
+            try {
+                const today = new Date().toISOString().split('T')[0];
 
-// Enregistrer la présence
-async function enregistrerPresence(boxeurId, statut) {
-    try {
-        const today = new Date().toISOString().split('T')[0];
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': API_KEY,
+                        'Authorization': 'Bearer ' + API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        boxeur_id: boxeurId,
+                        date_cours: today,
+                        statut: statut
+                    })
+                });
 
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
-            method: 'POST',
-            headers: {
-                'apikey': API_KEY,
-                'Authorization': 'Bearer ' + API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                boxeur_id: boxeurId,
-                date_cours: today,
-                statut: statut
-            })
-        });
+                if (!res.ok) throw new Error('Erreur insertion présence');
 
-        if (!res.ok) throw new Error('Erreur insertion présence');
-
-        document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
-    } catch (err) {
-        console.error(err);
-        document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
-    }
-}
-
-// Ajouter les listeners sur les boutons
-document.addEventListener('DOMContentLoaded', () => {
-    loadBoxeursSelect();
-
-    document.querySelectorAll('button[data-statut]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const select = document.getElementById('boxeurSelect');
-            if (!select.value) {
-                alert('Veuillez choisir un boxeur');
-                return;
+                document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
             }
-            enregistrerPresence(select.value, btn.dataset.statut);
+        }
+
+        // Ajouter les listeners sur les boutons
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBoxeursSelect();
+
+            document.querySelectorAll('button[data-statut]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const select = document.getElementById('boxeurSelect');
+                    if (!select.value) {
+                        alert('Veuillez choisir un boxeur');
+                        return;
+                    }
+                    enregistrerPresence(select.value, btn.dataset.statut);
+                });
+            });
         });
-    });
-});
     </script>
 
 </body>
