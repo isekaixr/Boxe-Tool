@@ -1,14 +1,13 @@
 // ui.js
-// Contient toutes les fonctions pour afficher les boxeurs à l'écran
+// Gestion de l'affichage dans le DOM
 
 export function afficherBoxeurs(boxeurs) {
-    const container = document.getElementById("liste");
-    container.innerHTML = "";
+    const listeDiv = document.getElementById("liste");
+    listeDiv.innerHTML = ""; // vide avant affichage
 
     boxeurs.forEach(b => {
         const div = document.createElement("div");
-        div.textContent = `${b.LastName} ${b.FirstName}`; // On n'affiche pas l'id
-        div.style.padding = "6px 0";
-        container.appendChild(div);
+        div.textContent = `${b.FirstName || ''} ${b.LastName || ''}`;
+        listeDiv.appendChild(div);
     });
 }
