@@ -59,6 +59,7 @@
 
     </script>
 
+    <h1>Liste des boxeurs depuis un champ déroulant.</h1>
 
     <!-- Champ déroulant -->
     <label for="boxeurSelect">Choisissez un boxeur :</label>
@@ -78,7 +79,7 @@
         async function loadBoxeurs() {
             const { data, error } = await supabase
                 .from('boxeurs')
-                .select('id, nom, prenom'); // récupère id, nom et prénom
+                .select('id, LastName, FirstName'); // récupère id, nom et prénom
 
             if (error) {
                 console.error(error);
@@ -89,7 +90,7 @@
             data.forEach(boxeur => {
                 const option = document.createElement('option');
                 option.value = boxeur.id;            // id en valeur
-                option.text = `${boxeur.nom} ${boxeur.prenom}`; // affichage nom + prénom
+                option.text = `${boxeur.LastName} ${boxeur.FirstName}`; // affichage nom + prénom
                 select.appendChild(option);
             });
         }
