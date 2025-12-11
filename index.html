@@ -59,11 +59,11 @@
 
     </script>
 
-    <h1>Liste des boxeurs depuis un champ déroulant.</h1>
+    <h1>Liste des boxeurs depuis un champ déroulant. 2</h1>
 
     <!-- Champ déroulant -->
-    <label for="BoxeursSelect">Choisissez un boxeur :</label>
-    <select id="BoxeursSelect">
+    <label for="boxeurSelect">Choisissez un boxeur :</label>
+    <select id="boxeurSelect">
         <option value="">-- Sélectionnez --</option>
     </select>
 
@@ -72,14 +72,14 @@
     <div id="selectedResult"></div>
 
     <script>
-        const select = document.getElementById('BoxeursSelect');
+        const select = document.getElementById('boxeurSelect');
         const result = document.getElementById('selectedResult');
 
         // Fetch des boxeurs depuis Supabase
         async function loadBoxeurs() {
             const { data, error } = await supabase
                 .from('Boxeurs')
-                .select('id, LastName, FirstName'); // récupère id, nom et prénom
+                .select('id, LastName, FirstName'); // respecter la casse des colonnes
 
             if (error) {
                 console.error(error);
@@ -87,10 +87,10 @@
             }
 
             // Remplir le select
-            data.forEach(Boxeurs => {
+            data.forEach(boxeur => {
                 const option = document.createElement('option');
-                option.value = Boxeurs.id;            // id en valeur
-                option.text = `${Boxeurs.LastName} ${Boxeurs.FirstName}`; // affichage nom + prénom
+                option.value = boxeur.id; // id en valeur
+                option.text = `${boxeur.LastName} ${boxeur.FirstName}`; // affichage nom + prénom
                 select.appendChild(option);
             });
         }
@@ -105,7 +105,6 @@
         // Charger les boxeurs au chargement de la page
         loadBoxeurs();
     </script>
-
 
 
 </body>
