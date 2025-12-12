@@ -284,11 +284,13 @@
                     let cotisationStatus = "Non payé";
 
                     if (l) {
+                        // Mettre à jour licence et cotisation
                         licenceStatus = getLicenceStatusMessage(l.licenceregdate);
                         const type = parseInt(l.cotisationtype) || 0;
                         let expireStr = '';
-                        if (type === 3) expireStr = l.cotisationpaymentdate || new Date().toISOString().split('T')[0];
-                        else if (type > 0 && l.cotisationpaymentdate) {
+                        if (type === 3) {
+                            expireStr = l.cotisationpaymentdate || new Date().toISOString().split('T')[0];
+                        } else if (type > 0 && l.cotisationpaymentdate) {
                             const expire = new Date(l.cotisationpaymentdate);
                             expire.setMonth(expire.getMonth() + type);
                             expireStr = expire.toISOString().split('T')[0];
@@ -296,6 +298,7 @@
                         cotisationStatus = getCotisationStatusMessage(l.cotisationpaymentdate, expireStr);
                     }
 
+                    // Considérer "En cours" comme pas en ordre
                     if (!(licenceStatus === "Valide" && cotisationStatus === "Payé")) {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `<td>${b.LastName} ${b.FirstName}</td><td>${licenceStatus}</td><td>${cotisationStatus}</td>`;
