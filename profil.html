@@ -2,88 +2,67 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Profil Boxeur</title>
-</head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boxe Tool Minimal 0.3</title>
 
-<body style="font-family:Arial; padding:20px;">
-    <h2>Profil boxeur</h2>
-
-    <!-- SELECT BOXEURS -->
-    <label for="selectBoxeur"><strong>Choisir un boxeur :</strong></label><br>
-    <select id="selectBoxeur" style="margin-top:10px; padding:5px; width:250px;">
-        <option value="">-- Sélectionner --</option>
-    </select>
-
-    <!-- Zone d'affichage -->
-    <div id="result" style="margin-top:20px; font-size:16px; font-weight:bold;"></div>
-
-    <script>
-        const SUPABASE_URL = "https://jchxkfyymxayehzhtqwj.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjaHhrZnl5bXhheWVoenRxd2oiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczMjYzMzc2OSwiZXhwIjoxNzY0MTk5NzY5fQ.IbKYi-7LEPkKRJ9zMv5pU4f5ucTuqWpQOJqzNKkGPWU";
+    <script defer>
+        const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
+        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
 
         // Fetch all boxers
         async function getBoxeurs() {
-            const { data, error } = await fetch(
-                `${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName,LicenceExpireDate,IsLicencePaid`,
-                {
-                    headers: {
-                        apikey: SUPABASE_KEY,
-                        Authorization: "Bearer " + SUPABASE_KEY
-                    }
-                }
-            ).then(r => r.json().then(d => ({ data: d })));
-
-            return data || [];
+            try {
+                const res = await fetch(SUPABASE_URL, {
+                    headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
+                });
+                return await res.json();
+            } catch (error) {
+                console.error("Erreur fetch Supabase :", error);
+                return [];
+            }
         }
 
-        // Fill select
-        async function chargerSelect() {
-            const select = document.getElementById("selectBoxeur");
+        // Fill select and setup change listener
+        async function initSelectBoxeur() {
+            const select = document.getElementById('boxeurSelect');
+            const result = document.getElementById('selectedResult');
             const boxeurs = await getBoxeurs();
 
             boxeurs.forEach(b => {
-                const opt = document.createElement("option");
+                const opt = document.createElement('option');
                 opt.value = b.id;
                 opt.textContent = `${b.LastName} ${b.FirstName}`;
-
-                // Store data in HTML dataset
-                opt.dataset.id = b.id;
-                opt.dataset.nom = b.LastName;
-                opt.dataset.prenom = b.FirstName;
-                opt.dataset.licence = b.LicenceExpireDate;
-                opt.dataset.paid = b.IsLicencePaid;
-
                 select.appendChild(opt);
+            });
+
+            // Display immediately when user selects a boxer
+            select.addEventListener('change', () => {
+                const opt = select.options[select.selectedIndex];
+                if (!opt || !opt.value) {
+                    result.innerText = "";
+                    return;
+                }
+                result.innerText = `ID: ${opt.value}, Nom: ${opt.textContent}`;
             });
         }
 
-        // When selecting a boxer → show instantly
-        document.getElementById("selectBoxeur").addEventListener("change", () => {
-            const select = document.getElementById("selectBoxeur");
-            const opt = select.options[select.selectedIndex];
-            const result = document.getElementById("result");
-
-            if (!opt || !opt.dataset.id) {
-                result.innerHTML = "";
-                return;
-            }
-
-            const id = opt.dataset.id;
-            const nom = opt.dataset.nom;
-            const prenom = opt.dataset.prenom;
-            const licence = opt.dataset.licence;
-            const paid = opt.dataset.paid === "true" ? "Payé" : "Non payé";
-
-            result.innerHTML = `
-                <strong>ID :</strong> ${id}<br>
-                <strong>Nom :</strong> ${nom} ${prenom}<br>
-                <strong>Licence :</strong> ${licence}<br>
-                <strong>Paiement :</strong> ${paid}
-            `;
+        // Initialize
+        window.addEventListener("DOMContentLoaded", () => {
+            initSelectBoxeur();
         });
-
-        // Initialize page
-        chargerSelect();
     </script>
+</head>
+
+<body>
+    <h1>Liste des Boxeurs</h1>
+    <div id="ButtonToShowAllBoxers"></div>
+    <div id="ShowAllBoxersResult"></div>
+
+    <h2>Profil des boxeurs</h2>
+    <label for="boxeurSelect">Choisissez un boxeur :</label>
+    <select id="boxeurSelect">
+        <option value="">-- Sélectionnez --</option>
+    </select>
+    <div id="selectedResult" style="margin-top:10px; font-weight:bold;"></div>
 </body>
 </html>
