@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Licences & Cotisations v.022</title>
+    <title>Boxe Tool - Licences & Cotisations v.024</title>
 </head>
 <body>
 
-    <h1>Gestion Licences & Cotisations</h1>
+    <h1>Gestion Licences & Cotisations v 0.1</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
@@ -29,13 +29,15 @@
         </label>
         <br>
 
-        <label>
-            Date expiration:
-            <input type="date" id="licenceexpiredate">
+        <label id="labelRegDate">
+            Date règlement:
+            <input type="date" id="licenceregdate">
         </label>
         <br>
 
         <label>Status: <span id="licencestatus"></span></label>
+        <br>
+        <label>Date expiration calculée: <span id="licenceexpiredate" data-prev=""></span></label>
     </div>
 
     <!-- Section Cotisations -->
@@ -54,7 +56,6 @@
         </label>
         <br>
 
-        <!-- Statut payé / non payé en texte -->
         <label>Payé: <span id="cotisationstatus"></span></label>
         <br>
 
@@ -63,6 +64,7 @@
             <input type="date" id="cotisationpaymentdate">
         </label>
         <br>
+
         <label>
             Date échéance:
             <input type="date" id="cotisationexpiredate">
@@ -80,6 +82,7 @@
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
 
+        // 🔹 Chargement des boxeurs
         async function loadBoxeurs() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
@@ -99,6 +102,43 @@
             }
         }
 
+        // 🔹 Calcul de la date d'expiration
+        function calculateLicenceExpireDate(regDateStr) {
+            if (!regDateStr) return '';
+            const regDate = new Date(regDateStr);
+            regDate.setFullYear(regDate.getFullYear() + 1); // +1 an
+            return regDate.toISOString().split('T')[0];
+        }
+
+        // 🔹 Statut licence
+        function getLicenceStatus(expireDateStr) {
+            if (!expireDateStr) return "En cours";
+            const today = new Date().toISOString().split('T')[0];
+            return expireDateStr >= today ? "Valide" : "Expirée";
+        }
+
+        // 🔹 Met à jour le statut et la date calculée
+        function updateLicenceStatus() {
+            const type = document.getElementById('licencetype').value;
+            const regDate = document.getElementById('licenceregdate').value;
+            const expireSpan = document.getElementById('licenceexpiredate');
+            const labelRegDate = document.getElementById('labelRegDate');
+
+            if (type === "En Cours") {
+                labelRegDate.style.display = 'none';
+                document.getElementById('licencestatus').innerText = "En cours";
+                // Si une expiration précédente existait, on l'affiche
+                const prevExpire = expireSpan.getAttribute('data-prev') || '';
+                expireSpan.innerText = prevExpire;
+            } else {
+                labelRegDate.style.display = 'inline';
+                const expireDate = calculateLicenceExpireDate(regDate);
+                expireSpan.innerText = expireDate;
+                document.getElementById('licencestatus').innerText = getLicenceStatus(expireDate);
+            }
+        }
+
+        // 🔹 Chargement licence + cotisation pour un boxeur
         async function loadLicenceCotisation(boxeurId) {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/licencesetcotisations?boxeur_id=eq.${boxeurId}`, {
@@ -109,20 +149,23 @@
                 if (data.length > 0) {
                     const l = data[0];
                     document.getElementById('licencetype').value = l.licencetype || '';
-                    document.getElementById('licenceexpiredate').value = l.licenceexpiredate || '';
-                    document.getElementById('licencestatus').innerText = getLicenceStatus(l.licenceexpiredate);
+                    document.getElementById('licenceregdate').value = l.licenceregdate || '';
+
+                    // On garde la dernière expiration calculée pour "En Cours"
+                    const lastExpire = l.licenceregdate ? calculateLicenceExpireDate(l.licenceregdate) : '';
+                    document.getElementById('licenceexpiredate').setAttribute('data-prev', lastExpire);
+
+                    updateLicenceStatus();
+
                     document.getElementById('cotisationtype').value = l.cotisationtype || '';
-
-                    // 🔹 Calcul du statut payé uniquement côté front
-                    document.getElementById('cotisationstatus').innerText =
-                        l.cotisationpaymentdate ? "Payé" : "Non payé";
-
+                    document.getElementById('cotisationstatus').innerText = l.cotisationpaymentdate ? "Payé" : "Non payé";
                     document.getElementById('cotisationexpiredate').value = l.cotisationexpiredate || '';
                     document.getElementById('cotisationpaymentdate').value = l.cotisationpaymentdate || '';
                 } else {
                     document.getElementById('licencetype').value = '';
-                    document.getElementById('licenceexpiredate').value = '';
+                    document.getElementById('licenceregdate').value = '';
                     document.getElementById('licencestatus').innerText = '';
+                    document.getElementById('licenceexpiredate').innerText = '';
                     document.getElementById('cotisationtype').value = '';
                     document.getElementById('cotisationstatus').innerText = '';
                     document.getElementById('cotisationexpiredate').value = '';
@@ -133,20 +176,14 @@
             }
         }
 
-        function getLicenceStatus(dateStr) {
-            if (!dateStr) return "En cours";
-            const today = new Date().toISOString().split('T')[0];
-            return dateStr >= today ? "Valide" : "Expirée";
-        }
-
+        // 🔹 Sauvegarde licence + cotisation (sans expiry date dans la DB)
         async function saveLicenceCotisation(boxeurId) {
             try {
                 const payload = {
                     boxeur_id: boxeurId,
                     licencetype: document.getElementById('licencetype').value,
-                    licenceexpiredate: document.getElementById('licenceexpiredate').value,
+                    licenceregdate: document.getElementById('licenceregdate').value,
                     cotisationtype: parseInt(document.getElementById('cotisationtype').value) || 0,
-                    cotisationexpiredate: document.getElementById('cotisationexpiredate').value,
                     cotisationpaymentdate: document.getElementById('cotisationpaymentdate').value
                 };
 
@@ -176,12 +213,16 @@
             }
         }
 
+        // 🔹 Événements
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeurs();
 
             document.getElementById('boxeurSelect').addEventListener('change', e => {
                 if (e.target.value) loadLicenceCotisation(e.target.value);
             });
+
+            document.getElementById('licenceregdate').addEventListener('change', updateLicenceStatus);
+            document.getElementById('licencetype').addEventListener('change', updateLicenceStatus);
 
             document.getElementById('saveBtn').addEventListener('click', () => {
                 const boxeurId = document.getElementById('boxeurSelect').value;
