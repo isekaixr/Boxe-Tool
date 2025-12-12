@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool Minimal 0.41</title>
+    <title>Boxe Tool Minimal 0.43</title>
 
     <script defer>
-        const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
+        const SUPABASE_URL_BOXEURS = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
+        const SUPABASE_URL_PRESENCES = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Presences';
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
 
         // Fetch all boxers
         async function getBoxeurs() {
             try {
-                const res = await fetch(SUPABASE_URL, {
+                const res = await fetch(SUPABASE_URL_BOXEURS, {
                     headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
                 });
                 return await res.json();
@@ -22,12 +23,37 @@
             }
         }
 
-        // Fill select and setup change listener
+        // Fetch number of presences for a boxer for a given month
+        async function getPresencesBoxeur(boxeurId, month) {
+            if (!boxeurId || !month) return 0;
+
+            const startMonth = month + "-01";
+            const [year, m] = month.split("-");
+            const endDay = new Date(year, parseInt(m), 0).getDate();
+            const endMonth = `${month}-${endDay.toString().padStart(2, '0')}`;
+
+            const url = `${SUPABASE_URL_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=gte.${startMonth}&date_cours=lte.${endMonth}&select=id`;
+
+            try {
+                const res = await fetch(url, {
+                    headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
+                });
+                const data = await res.json();
+                return data.length;
+            } catch (err) {
+                console.error("Erreur fetch Presences :", err);
+                return 0;
+            }
+        }
+
+        // Initialize select and listener
         async function initSelectBoxeur() {
             const select = document.getElementById('boxeurSelect');
+            const monthSelect = document.getElementById('monthSelect');
             const resultID = document.getElementById('lineID');
             const resultNom = document.getElementById('lineNom');
             const resultPrenom = document.getElementById('linePrenom');
+            const resultPresences = document.getElementById('linePresences');
 
             const boxeurs = await getBoxeurs();
 
@@ -40,23 +66,41 @@
                 select.appendChild(opt);
             });
 
-            // Display immediately when user selects a boxer
-            select.addEventListener('change', () => {
+            // Initialize month input with current month
+            const now = new Date();
+            monthSelect.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            async function updatePresences() {
+                const boxeurId = select.value;
+                const month = monthSelect.value;
+                if (!boxeurId || !month) {
+                    resultPresences.innerText = "";
+                    return;
+                }
+                const presences = await getPresencesBoxeur(boxeurId, month);
+                resultPresences.innerText = `Présences : ${presences}`;
+            }
+
+            select.addEventListener('change', async () => {
                 const opt = select.options[select.selectedIndex];
                 if (!opt || !opt.value) {
                     resultID.innerText = "";
                     resultNom.innerText = "";
                     resultPrenom.innerText = "";
+                    resultPresences.innerText = "";
                     return;
                 }
 
                 resultID.innerText = "ID : " + opt.value;
                 resultNom.innerText = "Nom : " + opt.dataset.lastname;
                 resultPrenom.innerText = "Prénom : " + opt.dataset.firstname;
+
+                await updatePresences();
             });
+
+            monthSelect.addEventListener('change', updatePresences);
         }
 
-        // Initialize
         window.addEventListener("DOMContentLoaded", () => {
             initSelectBoxeur();
         });
@@ -76,6 +120,9 @@
         <div id="lineID"></div>
         <div id="lineNom"></div>
         <div id="linePrenom"></div>
+        <label for="monthSelect">Sélectionnez un mois :</label>
+        <input type="month" id="monthSelect" style="margin-left:5px;">
+        <div id="linePresences"></div>
     </div>
 </body>
 </html>

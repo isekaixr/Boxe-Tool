@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Gestion Présences 0.13</title>
+    <title>Boxe Tool - Gestion Prï¿½sences 0.13</title>
 </head>
 <body>
 
-    <h1>Enregistrer la présence d'un boxeur 0.13</h1>
+    <h1>Enregistrer la prï¿½sence d'un boxeur 0.13</h1>
 
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
-        <option value="">-- Sélectionnez --</option>
+        <option value="">-- Sï¿½lectionnez --</option>
     </select>
 
     <div style="margin-top:10px;">
-        <button data-statut="Present">Présent</button>
+        <button data-statut="Present">Prï¿½sent</button>
         <button data-statut="Retard">Retard</button>
         <button data-statut="Blessure">Blessure</button>
         <button data-statut="Exclusion">Exclu</button>
@@ -27,7 +27,6 @@
     <script>
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
-
 
         // --- Charger les boxeurs ---
         async function loadBoxeursSelect() {
@@ -52,12 +51,12 @@
             }
         }
 
-        // --- Enregistrer ou mettre à jour ---
+        // --- Enregistrer ou mettre ï¿½ jour ---
         async function enregistrerPresence(boxeurId, statut) {
             try {
                 const today = new Date().toISOString().split('T')[0];
 
-                // DELETE éventuel pour le même jour
+                // DELETE ï¿½ventuel pour le mï¿½me jour
                 await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
                     method: 'DELETE',
                     headers: {
@@ -81,16 +80,16 @@
                     })
                 });
 
-                if (!res.ok) throw new Error('Erreur insertion présence');
+                if (!res.ok) throw new Error('Erreur insertion prï¿½sence');
 
-                document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
+                document.getElementById('result').innerText = `Prï¿½sence enregistrï¿½e : ${statut}`;
             } catch (err) {
                 console.error(err);
                 document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
             }
         }
 
-        // --- Supprimer la présence ---
+        // --- Supprimer la prï¿½sence ---
         async function supprimerPresence(boxeurId) {
             try {
                 const today = new Date().toISOString().split('T')[0];
@@ -102,7 +101,7 @@
                     }
                 });
                 if (res.ok) {
-                    document.getElementById('result').innerText = 'Présence annulée';
+                    document.getElementById('result').innerText = 'Prï¿½sence annulï¿½e';
                 } else {
                     document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
                 }
@@ -131,6 +130,5 @@
             });
         });
     </script>
-
 </body>
 </html>
