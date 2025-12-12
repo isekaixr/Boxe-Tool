@@ -35,7 +35,19 @@
 
     <div style="margin-top:15px;">
         <h3>Cotisation</h3>
-        <label>Type (mois): <input type="number" id="cotisationtype" min="0"></label><br>
+
+        <label>
+            Type (mois / séance) :
+            <select id="cotisationtype">
+                <option value="">— choisir —</option>
+                <option value="3">3€</option>
+                <option value="1">1</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+            </select>
+        </label>
+        <br>
+
         <label>Payé: <input type="checkbox" id="cotisationpaid"></label><br>
         <label>Date échéance: <input type="date" id="cotisationexpiredate"></label><br>
         <label>Date paiement: <input type="date" id="cotisationpaymentdate"></label>
