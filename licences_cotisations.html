@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Licences & Cotisations v0.23</title>
+    <title>Boxe Tool - Licences & Cotisations v0.24</title>
     <style>
         table {
             border-collapse: collapse;
@@ -19,11 +19,13 @@
 
         th {
             background-color: #f0f0f0;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Gestion Licences & Cotisations v0.23</h1>
+
+    <h1>Gestion Licences & Cotisations v0.24</h1>
 
     <!-- Statut global -->
     <div style="margin-bottom:20px;">
@@ -107,6 +109,7 @@
             <tbody></tbody>
         </table>
     </div>
+
     <script>
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
@@ -142,6 +145,7 @@
                 });
                 const data = await res.json();
                 const select = document.getElementById('boxeurSelect');
+                select.innerHTML = '<option value="">-- Sélectionnez --</option>';
                 data.forEach(b => {
                     const opt = document.createElement('option');
                     opt.value = b.id;
@@ -231,6 +235,27 @@
 
             updateOverallStatus();
         }
+
+        function updateOverallStatus() {
+            const licenceText = document.getElementById('licencestatus').innerText;
+            const cotisationText = document.getElementById('cotisationstatus').innerText;
+
+            const licenceFutureMatch = licenceText.match(/Valide à partir du (\d{4}-\d{2}-\d{2})/);
+            const cotisationFutureMatch = cotisationText.match(/Payé à partir du (\d{4}-\d{2}-\d{2})/);
+
+            if (licenceFutureMatch && cotisationFutureMatch) {
+                const futureDate = licenceFutureMatch[1] > cotisationFutureMatch[1] ? licenceFutureMatch[1] : cotisationFutureMatch[1];
+                document.getElementById('overallStatus').innerText = `En ordre à partir du ${futureDate}`;
+            } else if (licenceFutureMatch) {
+                document.getElementById('overallStatus').innerText = `En ordre à partir du ${licenceFutureMatch[1]}`;
+            } else if (cotisationFutureMatch) {
+                document.getElementById('overallStatus').innerText = `En ordre à partir du ${cotisationFutureMatch[1]}`;
+            } else {
+                document.getElementById('overallStatus').innerText =
+                    (licenceText === "Valide" && cotisationText === "Payé") ? "En ordre" : "Pas en ordre";
+            }
+        }
+
         // --- Enregistrement licence & cotisation ---
         async function saveLicenceCotisation(boxeurId) {
             try {
@@ -284,7 +309,6 @@
                     let cotisationStatus = "Non payé";
 
                     if (l) {
-                        // Mettre à jour licence et cotisation
                         licenceStatus = getLicenceStatusMessage(l.licenceregdate);
                         const type = parseInt(l.cotisationtype) || 0;
                         let expireStr = '';
@@ -323,7 +347,6 @@
             const table = document.querySelector(tableSelector);
             const headers = table.querySelectorAll('th');
             headers.forEach((th, index) => {
-                th.style.cursor = 'pointer';
                 th.addEventListener('click', () => {
                     const tbody = table.querySelector('tbody');
                     const rows = Array.from(tbody.querySelectorAll('tr'));
@@ -358,7 +381,6 @@
                 saveLicenceCotisation(boxeurId);
             });
 
-            // Charger directement les boxeurs pas en ordre
             loadBoxeursNotInOrderOptimized();
         });
     </script>
