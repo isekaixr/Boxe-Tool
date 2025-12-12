@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool Minimal</title>
+    <title>Boxe Tool Minimal 0.37</title>
 
     <!-- =============================
          ⚡ CONFIGURATION SUPABASE
          ============================= -->
-    <script>
+    <script defer>
         // Supabase REST API endpoint
         const SUPABASE_URL =
             'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
@@ -21,7 +21,7 @@
     <!-- =============================
          📜 SCRIPT : LISTE COMPLETE
          ============================= -->
-    <script>
+    <script defer>
         // Fetch all boxers from Supabase
         async function getBoxeurs() {
             try {
@@ -50,7 +50,7 @@
             });
         }
 
-        // Setup the "Show All Boxers" button once the page loads
+        // Setup the "Show All Boxers" button once DOM is ready
         window.addEventListener("DOMContentLoaded", () => {
             const containerButton = document.getElementById("ButtonToShowAllBoxers");
 
@@ -69,9 +69,9 @@
     <!-- =============================
          📜 SCRIPT : SELECT BOXEUR
          ============================= -->
-    <script>
-        // Elements used for the dropdown
-        let select, result;
+    <script defer>
+        let select;
+        let result;
 
         // Load boxers into the select dropdown
         async function loadBoxeursSelect() {
@@ -84,7 +84,6 @@
                 });
 
                 const data = await res.json();
-                console.log("Boxeurs pour select :", data);
 
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
@@ -98,20 +97,49 @@
             }
         }
 
-        // Display selected boxer information
+        // Display selected boxer
         function setupSelectionLogic() {
             document.getElementById('showSelected').addEventListener('click', () => {
                 const selectedOption = select.options[select.selectedIndex];
                 const selectedId = selectedOption.value;
                 const selectedText = selectedOption.textContent;
+
                 result.innerText = `ID: ${selectedId}, Nom: ${selectedText}`;
             });
         }
 
-        // Initialize dropdown logic after loading DOM
+        // Initialize dropdown logic after DOM loaded
         window.addEventListener("DOMContentLoaded", () => {
             select = document.getElementById('boxeurSelect');
             result = document.getElementById('selectedResult');
 
             loadBoxeursSelect();
-            setupSelectionLogic()
+            setupSelectionLogic();
+        });
+    </script>
+</head>
+
+<body>
+
+    <h1>Liste des Boxeurs (version 0.37)</h1>
+
+    <div id="ButtonToShowAllBoxers"></div>
+    <div id="ShowAllBoxersResult"></div>
+
+    <br><br>
+
+    <h1>Profil des boxeurs – version 2.3</h1>
+
+    <!-- Dropdown -->
+    <label for="boxeurSelect">Choisissez un boxeur :</label>
+    <select id="boxeurSelect">
+        <option value="">-- Sélectionnez --</option>
+    </select>
+
+    <!-- Button to display selection -->
+    <button id="showSelected">Afficher le boxeur choisi</button>
+
+    <!-- Result -->
+    <div id="selectedResult"></div>
+</body>
+</html>
