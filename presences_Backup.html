@@ -71,6 +71,7 @@
         // --- Enregistrer la pr�sence (delete si existe puis insert) ---
         async function enregistrerPresence(boxeurId, statut) {
             try {
+
                 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
                 // Delete �ventuelle pr�sence existante
@@ -119,6 +120,5 @@
             });
         });
     </script>
-
 </body>
 </html>

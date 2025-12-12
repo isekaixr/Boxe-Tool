@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool Minimal 0.3</title>
+    <title>Boxe Tool Minimal 0.41</title>
 
     <script defer>
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
@@ -25,12 +25,17 @@
         // Fill select and setup change listener
         async function initSelectBoxeur() {
             const select = document.getElementById('boxeurSelect');
-            const result = document.getElementById('selectedResult');
+            const resultID = document.getElementById('lineID');
+            const resultNom = document.getElementById('lineNom');
+            const resultPrenom = document.getElementById('linePrenom');
+
             const boxeurs = await getBoxeurs();
 
             boxeurs.forEach(b => {
                 const opt = document.createElement('option');
                 opt.value = b.id;
+                opt.dataset.lastname = b.LastName;
+                opt.dataset.firstname = b.FirstName;
                 opt.textContent = `${b.LastName} ${b.FirstName}`;
                 select.appendChild(opt);
             });
@@ -39,10 +44,15 @@
             select.addEventListener('change', () => {
                 const opt = select.options[select.selectedIndex];
                 if (!opt || !opt.value) {
-                    result.innerText = "";
+                    resultID.innerText = "";
+                    resultNom.innerText = "";
+                    resultPrenom.innerText = "";
                     return;
                 }
-                result.innerText = `ID: ${opt.value}, Nom: ${opt.textContent}`;
+
+                resultID.innerText = "ID : " + opt.value;
+                resultNom.innerText = "Nom : " + opt.dataset.lastname;
+                resultPrenom.innerText = "Prénom : " + opt.dataset.firstname;
             });
         }
 
@@ -55,14 +65,17 @@
 
 <body>
     <h1>Liste des Boxeurs</h1>
-    <div id="ButtonToShowAllBoxers"></div>
-    <div id="ShowAllBoxersResult"></div>
 
     <h2>Profil des boxeurs</h2>
     <label for="boxeurSelect">Choisissez un boxeur :</label>
     <select id="boxeurSelect">
         <option value="">-- Sélectionnez --</option>
     </select>
-    <div id="selectedResult" style="margin-top:10px; font-weight:bold;"></div>
+
+    <div id="selectedResult" style="margin-top:15px; font-weight:bold;">
+        <div id="lineID"></div>
+        <div id="lineNom"></div>
+        <div id="linePrenom"></div>
+    </div>
 </body>
 </html>
