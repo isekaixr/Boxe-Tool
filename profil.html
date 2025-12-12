@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool Minimal 0.43</title>
+    <title>Boxe Tool Minimal 0.48</title>
 
     <script defer>
         const SUPABASE_URL_BOXEURS = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
         const SUPABASE_URL_PRESENCES = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Presences';
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
 
-        // Fetch all boxers
+        // --- Fetch boxeurs ---
         async function getBoxeurs() {
             try {
                 const res = await fetch(SUPABASE_URL_BOXEURS, {
@@ -23,30 +23,31 @@
             }
         }
 
-        // Fetch number of presences for a boxer for a given month
-        async function getPresencesBoxeur(boxeurId, month) {
-            if (!boxeurId || !month) return 0;
+        // --- Fetch présences par statut ---
+        async function getPresencesBoxeur(boxeurId, month, statut) {
+            if (!boxeurId || !month || !statut) return 0;
 
             const startMonth = month + "-01";
             const [year, m] = month.split("-");
             const endDay = new Date(year, parseInt(m), 0).getDate();
-            const endMonth = `${month}-${endDay.toString().padStart(2, '0')}`;
+            const endMonth = `${month}-${String(endDay).padStart(2, '0')}`;
 
-            const url = `${SUPABASE_URL_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=gte.${startMonth}&date_cours=lte.${endMonth}&select=id`;
+            // Correct field: 'statut' instead of 'statu'
+            const url = `${SUPABASE_URL_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=gte.${startMonth}&date_cours=lte.${endMonth}&statut=eq.${statut}&select=id`;
 
             try {
                 const res = await fetch(url, {
                     headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
                 });
                 const data = await res.json();
-                return data.length;
+                return Array.isArray(data) ? data.length : 0;
             } catch (err) {
-                console.error("Erreur fetch Presences :", err);
+                console.error(`Erreur fetch Presences ${statut} :`, err);
                 return 0;
             }
         }
 
-        // Initialize select and listener
+        // --- Init select et listener ---
         async function initSelectBoxeur() {
             const select = document.getElementById('boxeurSelect');
             const monthSelect = document.getElementById('monthSelect');
@@ -56,7 +57,6 @@
             const resultPresences = document.getElementById('linePresences');
 
             const boxeurs = await getBoxeurs();
-
             boxeurs.forEach(b => {
                 const opt = document.createElement('option');
                 opt.value = b.id;
@@ -66,7 +66,6 @@
                 select.appendChild(opt);
             });
 
-            // Initialize month input with current month
             const now = new Date();
             monthSelect.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
@@ -77,11 +76,21 @@
                     resultPresences.innerText = "";
                     return;
                 }
-                const presences = await getPresencesBoxeur(boxeurId, month);
-                resultPresences.innerText = `Présences : ${presences}`;
+
+                const present = await getPresencesBoxeur(boxeurId, month, "Present");
+                const retard = await getPresencesBoxeur(boxeurId, month, "Retard");
+                const blessure = await getPresencesBoxeur(boxeurId, month, "Blessure");
+                const exclu = await getPresencesBoxeur(boxeurId, month, "Exclusion");
+
+                resultPresences.innerHTML = `
+                        Présent : ${present || 0} <br>
+                        Retard : ${retard || 0} <br>
+                        Blessure : ${blessure || 0} <br>
+                        Exclu : ${exclu || 0}
+                    `;
             }
 
-            select.addEventListener('change', async () => {
+            select.addEventListener('change', () => {
                 const opt = select.options[select.selectedIndex];
                 if (!opt || !opt.value) {
                     resultID.innerText = "";
@@ -90,12 +99,10 @@
                     resultPresences.innerText = "";
                     return;
                 }
-
                 resultID.innerText = "ID : " + opt.value;
                 resultNom.innerText = "Nom : " + opt.dataset.lastname;
                 resultPrenom.innerText = "Prénom : " + opt.dataset.firstname;
-
-                await updatePresences();
+                updatePresences();
             });
 
             monthSelect.addEventListener('change', updatePresences);
