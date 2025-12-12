@@ -55,22 +55,7 @@
                 afficherBoxeurs(boxeurs);
             });
         });
-
     </script>
-
-    <br>
-    <h1>Profil des boxeurs depuis un champ déroulant. version 2.3</h1>
-    <br>
-
-    <!-- Champ déroulant -->
-    <label for="boxeurSelect">Choisissez un boxeur :</label>
-    <select id="boxeurSelect">
-        <option value="">-- Sélectionnez --</option>
-    </select>
-
-    <!-- Bouton pour tester la sélection -->
-    <button id="showSelected">Afficher le boxeur choisi</button>
-    <div id="selectedResult"></div>
 
     <script>
         const select = document.getElementById('boxeurSelect');
@@ -118,10 +103,20 @@
 
         // Charger les boxeurs au chargement de la page
         loadBoxeursSelect();
-
     </script>
 
+    <br>
+    <h1>Profil des boxeurs depuis un champ déroulant. version 2.3</h1>
+    <br>
 
+    <!-- Champ déroulant -->
+    <label for="boxeurSelect">Choisissez un boxeur :</label>
+    <select id="boxeurSelect">
+        <option value="">-- Sélectionnez --</option>
+    </select>
 
+    <!-- Bouton pour tester la sélection -->
+    <button id="showSelected">Afficher le boxeur choisi</button>
+    <div id="selectedResult"></div>
 </body>
 </html>
