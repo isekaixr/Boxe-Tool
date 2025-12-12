@@ -4,20 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boxe Tool Minimal</title>
-</head>
-<body>
-    <br>
-    <h1>Liste des Boxeurs dans le listener bouton 0.36</h1>
-    <br>
 
-    <div id="ButtonToShowAllBoxers"></div>
-    <div id="ShowAllBoxersResult"></div>
-
-    <!-- Affichage des différents boxeurs inscrits.-->
+    <!-- =============================
+         ⚡ CONFIGURATION SUPABASE
+         ============================= -->
     <script>
-        const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
-        const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
+        // Supabase REST API endpoint
+        const SUPABASE_URL =
+            'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
 
+        // Public API Key (anon key)
+        const API_KEY =
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
+    </script>
+
+    <!-- =============================
+         📜 SCRIPT : LISTE COMPLETE
+         ============================= -->
+    <script>
+        // Fetch all boxers from Supabase
         async function getBoxeurs() {
             try {
                 const res = await fetch(SUPABASE_URL, {
@@ -33,9 +38,10 @@
             }
         }
 
+        // Display all boxers in the result container
         function afficherBoxeurs(boxeurs) {
             const resultDiv = document.getElementById("ShowAllBoxersResult");
-            resultDiv.innerHTML = ""; // Vide avant affichage
+            resultDiv.innerHTML = ""; // Clear before display
 
             boxeurs.forEach(b => {
                 const div = document.createElement("div");
@@ -44,9 +50,10 @@
             });
         }
 
-        // --- Bouton dans la div prévue ---
+        // Setup the "Show All Boxers" button once the page loads
         window.addEventListener("DOMContentLoaded", () => {
             const containerButton = document.getElementById("ButtonToShowAllBoxers");
+
             const bouton = document.createElement("button");
             bouton.textContent = "Afficher les boxeurs";
 
@@ -59,36 +66,22 @@
         });
     </script>
 
-    <br>
-    <h1>Profil des boxeurs depuis un champ déroulant. version 2.3</h1>
-    <br>
-
-    <!-- Champ déroulant -->
-    <label for="boxeurSelect">Choisissez un boxeur :</label>
-    <select id="boxeurSelect">
-        <option value="">-- Sélectionnez --</option>
-    </select>
-
-    <!-- Bouton pour tester la sélection -->
-    <button id="showSelected">Afficher le boxeur choisi</button>
-    <div id="selectedResult"></div>
-
-    <!-- Résultat de la sélection -->
+    <!-- =============================
+         📜 SCRIPT : SELECT BOXEUR
+         ============================= -->
     <script>
-        const select = document.getElementById('boxeurSelect');
-        const result = document.getElementById('selectedResult');
+        // Elements used for the dropdown
+        let select, result;
 
+        // Load boxers into the select dropdown
         async function loadBoxeursSelect() {
             try {
-                const res = await fetch(
-                    "https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName,LicenceExpireDate,IsLicencePaid",
-                    {
-                        headers: {
-                            "apikey": API_KEY,
-                            "Authorization": "Bearer " + API_KEY
-                        }
+                const res = await fetch(SUPABASE_URL, {
+                    headers: {
+                        "apikey": API_KEY,
+                        "Authorization": "Bearer " + API_KEY
                     }
-                );
+                });
 
                 const data = await res.json();
                 console.log("Boxeurs pour select :", data);
@@ -96,10 +89,7 @@
                 data.forEach(boxeur => {
                     const option = document.createElement('option');
                     option.value = boxeur.id;
-                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`; // juste nom + prénom
-                    // stocker les infos supplémentaires dans dataset
-                    option.dataset.licenceDate = boxeur.LicenceExpireDate;
-                    option.dataset.isPaid = boxeur.IsLicencePaid ? "Payé" : "Non Payé";
+                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
                     select.appendChild(option);
                 });
 
@@ -108,18 +98,20 @@
             }
         }
 
-        // Tester la sélection
-        document.getElementById('showSelected').addEventListener('click', () => {
-            const selectedOption = select.options[select.selectedIndex];
-            const selectedId = selectedOption.value;
-            const selectedText = selectedOption.textContent;
-            const licenceDate = selectedOption.dataset.licenceDate;
-            const isPaid = selectedOption.dataset.isPaid;
-            result.innerText = `ID: ${selectedId}, Nom: ${selectedText}, Licence expire: ${licenceDate}, Payé: ${isPaid}`;
-        });
+        // Display selected boxer information
+        function setupSelectionLogic() {
+            document.getElementById('showSelected').addEventListener('click', () => {
+                const selectedOption = select.options[select.selectedIndex];
+                const selectedId = selectedOption.value;
+                const selectedText = selectedOption.textContent;
+                result.innerText = `ID: ${selectedId}, Nom: ${selectedText}`;
+            });
+        }
 
-        // Charger les boxeurs au chargement de la page
-        loadBoxeursSelect();
-    </script>
-</body>
-</html>
+        // Initialize dropdown logic after loading DOM
+        window.addEventListener("DOMContentLoaded", () => {
+            select = document.getElementById('boxeurSelect');
+            result = document.getElementById('selectedResult');
+
+            loadBoxeursSelect();
+            setupSelectionLogic()
