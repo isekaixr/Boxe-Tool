@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool - Licences & Cotisations v 0.22</title>
+    <title>Boxe Tool - Licences & Cotisations v0.23</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #aaa;
+            padding: 6px 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
-
-    <h1>Gestion Licences & Cotisations v 0.22</h1>
+    <h1>Gestion Licences & Cotisations v0.23</h1>
 
     <!-- Statut global -->
     <div style="margin-bottom:20px;">
@@ -77,6 +93,20 @@
 
     <div id="result" style="margin-top:20px; font-weight:bold;"></div>
 
+    <!-- Tableau boxeurs pas en ordre -->
+    <div style="margin-top:20px;">
+        <h2>Boxeurs pas en ordre :</h2>
+        <table id="notInOrderTable">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Licence</th>
+                    <th>Cotisation</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
     <script>
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
@@ -124,6 +154,7 @@
             }
         }
 
+        // --- Load licence & cotisation ---
         async function loadLicenceCotisation(boxeurId) {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/licencesetcotisations?boxeur_id=eq.${boxeurId}`, {
@@ -142,7 +173,9 @@
                     document.getElementById('cotisationpaymentdate').value = l.cotisationpaymentdate || '';
                     updateCotisationStatus();
                 } else clearForm();
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function clearForm() {
@@ -198,27 +231,7 @@
 
             updateOverallStatus();
         }
-
-        function updateOverallStatus() {
-            const licenceText = document.getElementById('licencestatus').innerText;
-            const cotisationText = document.getElementById('cotisationstatus').innerText;
-
-            const licenceFutureMatch = licenceText.match(/Valide à partir du (\d{4}-\d{2}-\d{2})/);
-            const cotisationFutureMatch = cotisationText.match(/Payé à partir du (\d{4}-\d{2}-\d{2})/);
-
-            if (licenceFutureMatch && cotisationFutureMatch) {
-                const futureDate = licenceFutureMatch[1] > cotisationFutureMatch[1] ? licenceFutureMatch[1] : cotisationFutureMatch[1];
-                document.getElementById('overallStatus').innerText = `En ordre à partir du ${futureDate}`;
-            } else if (licenceFutureMatch) {
-                document.getElementById('overallStatus').innerText = `En ordre à partir du ${licenceFutureMatch[1]}`;
-            } else if (cotisationFutureMatch) {
-                document.getElementById('overallStatus').innerText = `En ordre à partir du ${cotisationFutureMatch[1]}`;
-            } else {
-                document.getElementById('overallStatus').innerText =
-                    (licenceText === "Valide" && cotisationText === "Payé") ? "En ordre" : "Pas en ordre";
-            }
-        }
-
+        // --- Enregistrement licence & cotisation ---
         async function saveLicenceCotisation(boxeurId) {
             try {
                 const payload = {
@@ -228,10 +241,12 @@
                     cotisationtype: parseInt(document.getElementById('cotisationtype').value) || 0,
                     cotisationpaymentdate: document.getElementById('cotisationpaymentdate').value
                 };
+                // Supprimer l'entrée existante
                 await fetch(`${SUPABASE_URL}/rest/v1/licencesetcotisations?boxeur_id=eq.${boxeurId}`, {
                     method: 'DELETE',
                     headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
                 });
+                // Insérer le nouvel enregistrement
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/licencesetcotisations`, {
                     method: 'POST',
                     headers: {
@@ -244,15 +259,92 @@
                 if (!res.ok) throw new Error(await res.text());
                 document.getElementById('result').innerText = "Licence et cotisation mises à jour";
                 loadLicenceCotisation(boxeurId);
+                loadBoxeursNotInOrderOptimized();
             } catch (e) {
                 console.error(e);
                 document.getElementById('result').innerText = "Erreur mise à jour licence";
             }
         }
 
+        // --- Chargement boxeurs pas en ordre ---
+        async function loadBoxeursNotInOrderOptimized() {
+            const tbody = document.querySelector('#notInOrderTable tbody');
+            tbody.innerHTML = '<tr><td colspan="3">Chargement...</td></tr>';
+            try {
+                const query = `select=id,LastName,FirstName,licencesetcotisations!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?${query}`, {
+                    headers: { "apikey": API_KEY, "Authorization": "Bearer " + API_KEY }
+                });
+                const boxeurs = await res.json();
+                tbody.innerHTML = '';
+
+                boxeurs.forEach(b => {
+                    const l = b.licencesetcotisations && b.licencesetcotisations[0] ? b.licencesetcotisations[0] : null;
+                    let licenceStatus = "En cours";
+                    let cotisationStatus = "Non payé";
+
+                    if (l) {
+                        licenceStatus = getLicenceStatusMessage(l.licenceregdate);
+                        const type = parseInt(l.cotisationtype) || 0;
+                        let expireStr = '';
+                        if (type === 3) expireStr = l.cotisationpaymentdate || new Date().toISOString().split('T')[0];
+                        else if (type > 0 && l.cotisationpaymentdate) {
+                            const expire = new Date(l.cotisationpaymentdate);
+                            expire.setMonth(expire.getMonth() + type);
+                            expireStr = expire.toISOString().split('T')[0];
+                        }
+                        cotisationStatus = getCotisationStatusMessage(l.cotisationpaymentdate, expireStr);
+                    }
+
+                    if (!(licenceStatus === "Valide" && cotisationStatus === "Payé")) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${b.LastName} ${b.FirstName}</td><td>${licenceStatus}</td><td>${cotisationStatus}</td>`;
+                        tbody.appendChild(tr);
+                    }
+                });
+
+                if (!tbody.hasChildNodes()) {
+                    tbody.innerHTML = '<tr><td colspan="3">Tous les boxeurs sont en ordre 👍</td></tr>';
+                }
+
+                addTableSort('#notInOrderTable');
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="3">Erreur chargement boxeurs</td></tr>';
+            }
+        }
+
+        // --- Tri dynamique du tableau ---
+        function addTableSort(tableSelector) {
+            const table = document.querySelector(tableSelector);
+            const headers = table.querySelectorAll('th');
+            headers.forEach((th, index) => {
+                th.style.cursor = 'pointer';
+                th.addEventListener('click', () => {
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const isAsc = th.classList.contains('asc');
+                    rows.sort((a, b) => {
+                        const cellA = a.children[index].innerText.toLowerCase();
+                        const cellB = b.children[index].innerText.toLowerCase();
+                        return cellA.localeCompare(cellB) * (isAsc ? -1 : 1);
+                    });
+                    tbody.innerHTML = '';
+                    rows.forEach(r => tbody.appendChild(r));
+                    headers.forEach(h => h.classList.remove('asc', 'desc'));
+                    th.classList.toggle('asc', !isAsc);
+                    th.classList.toggle('desc', isAsc);
+                });
+            });
+        }
+
+        // --- Initialisation ---
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeurs();
-            document.getElementById('boxeurSelect').addEventListener('change', e => { if (e.target.value) loadLicenceCotisation(e.target.value); });
+            document.getElementById('boxeurSelect').addEventListener('change', e => {
+                if (e.target.value) loadLicenceCotisation(e.target.value);
+            });
             document.getElementById('licencetype').addEventListener('change', updateLicenceStatus);
             document.getElementById('licenceregdate').addEventListener('change', updateLicenceStatus);
             document.getElementById('cotisationtype').addEventListener('change', updateCotisationStatus);
@@ -262,6 +354,9 @@
                 if (!boxeurId) { alert("Veuillez sélectionner un boxeur"); return; }
                 saveLicenceCotisation(boxeurId);
             });
+
+            // Charger directement les boxeurs pas en ordre
+            loadBoxeursNotInOrderOptimized();
         });
     </script>
 </body>
