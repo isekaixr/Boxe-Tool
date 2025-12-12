@@ -7,8 +7,14 @@
 </head>
 <body>
     <br>
-    <h1>Liste des Boxeurs dans le listener bouton</h1>
+    <h1>Liste des Boxeurs dans le listener bouton 0.34</h1>
     <br>
+
+    <!-- Bouton pour tester la sélection -->
+    <button id="showSelected">Afficher le boxeur choisi</button>
+    <div id="selectedResult"></div>
+
+    <!-- Affichage des différents boxeurs inscrits.-->
     <script>
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=LastName,FirstName';
         const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cmZydG1haGZ5bXd1eGdwcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDUzMTksImV4cCI6MjA4MDk4MTMxOX0.ge8mWR-cejDTxPC2zTm-Xl1eBma1KWro8-SEzM8zblk';
@@ -57,6 +63,17 @@
         });
     </script>
 
+    <br>
+    <h1>Profil des boxeurs depuis un champ déroulant. version 2.3</h1>
+    <br>
+
+    <!-- Champ déroulant -->
+    <label for="boxeurSelect">Choisissez un boxeur :</label>
+    <select id="boxeurSelect">
+        <option value="">-- Sélectionnez --</option>
+    </select>
+
+    <!-- Résultat de la sélection -->
     <script>
         const select = document.getElementById('boxeurSelect');
         const result = document.getElementById('selectedResult');
@@ -104,19 +121,5 @@
         // Charger les boxeurs au chargement de la page
         loadBoxeursSelect();
     </script>
-
-    <br>
-    <h1>Profil des boxeurs depuis un champ déroulant. version 2.3</h1>
-    <br>
-
-    <!-- Champ déroulant -->
-    <label for="boxeurSelect">Choisissez un boxeur :</label>
-    <select id="boxeurSelect">
-        <option value="">-- Sélectionnez --</option>
-    </select>
-
-    <!-- Bouton pour tester la sélection -->
-    <button id="showSelected">Afficher le boxeur choisi</button>
-    <div id="selectedResult"></div>
 </body>
 </html>
