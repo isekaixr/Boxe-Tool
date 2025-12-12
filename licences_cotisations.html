@@ -54,7 +54,7 @@
         </label>
         <br>
 
-        <!-- Statut payé / non payé en texte -->
+        <!-- Statut payé / non payé calculé côté front -->
         <label>Payé: <span id="cotisationstatus"></span></label>
         <br>
 
@@ -87,7 +87,6 @@
                 });
                 const data = await res.json();
                 const select = document.getElementById('boxeurSelect');
-
                 data.forEach(b => {
                     const opt = document.createElement('option');
                     opt.value = b.id;
@@ -113,7 +112,11 @@
                     document.getElementById('licenceexpiredate').value = l.licenceexpiredate || '';
                     document.getElementById('licencestatus').innerText = getLicenceStatus(l.licenceexpiredate);
                     document.getElementById('cotisationtype').value = l.cotisationtype || '';
-                    document.getElementById('cotisationstatus').innerText = l.cotisationpaid ? "Payé" : "Non payé";
+
+                    // 🔹 Calcul du statut payé uniquement côté front
+                    document.getElementById('cotisationstatus').innerText =
+                        l.cotisationpaymentdate ? "Payé" : "Non payé";
+
                     document.getElementById('cotisationexpiredate').value = l.cotisationexpiredate || '';
                     document.getElementById('cotisationpaymentdate').value = l.cotisationpaymentdate || '';
                 } else {
