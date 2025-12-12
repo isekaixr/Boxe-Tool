@@ -83,11 +83,11 @@
                 const exclu = await getPresencesBoxeur(boxeurId, month, "Exclusion");
 
                 resultPresences.innerHTML = `
-                        Présent : ${present || 0} <br>
-                        Retard : ${retard || 0} <br>
-                        Blessure : ${blessure || 0} <br>
-                        Exclu : ${exclu || 0}
-                    `;
+                            Présent : ${present || 0} <br>
+                            Retard : ${retard || 0} <br>
+                            Blessure : ${blessure || 0} <br>
+                            Exclusion : ${exclusion || 0}
+                        `;
             }
 
             select.addEventListener('change', () => {
