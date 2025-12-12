@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxe Tool Minimal 0.48</title>
+    <title>Boxe Tool Minimal 0.50</title>
 
     <script defer>
         const SUPABASE_URL_BOXEURS = 'https://uxrfrtmahfymwuxgprsd.supabase.co/rest/v1/Boxeurs?select=id,LastName,FirstName';
@@ -32,7 +32,6 @@
             const endDay = new Date(year, parseInt(m), 0).getDate();
             const endMonth = `${month}-${String(endDay).padStart(2, '0')}`;
 
-            // Correct field: 'statut' instead of 'statu'
             const url = `${SUPABASE_URL_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=gte.${startMonth}&date_cours=lte.${endMonth}&statut=eq.${statut}&select=id`;
 
             try {
@@ -80,14 +79,14 @@
                 const present = await getPresencesBoxeur(boxeurId, month, "Present");
                 const retard = await getPresencesBoxeur(boxeurId, month, "Retard");
                 const blessure = await getPresencesBoxeur(boxeurId, month, "Blessure");
-                const exclu = await getPresencesBoxeur(boxeurId, month, "Exclusion");
+                const exclusion = await getPresencesBoxeur(boxeurId, month, "Exclusion");
 
                 resultPresences.innerHTML = `
-                            Présent : ${present || 0} <br>
-                            Retard : ${retard || 0} <br>
-                            Blessure : ${blessure || 0} <br>
-                            Exclusion : ${exclusion || 0}
-                        `;
+                    Présent : ${present || 0} <br>
+                    Retard : ${retard || 0} <br>
+                    Blessure : ${blessure || 0} <br>
+                    Exclusion : ${exclusion || 0}
+                `;
             }
 
             select.addEventListener('change', () => {
