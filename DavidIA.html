@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bonjour David</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 3em;
+        }
+
+        pre {
+            margin-top: 20px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bonjour David !</h1>
+    <pre id="worker-response">Chargement...</pre>
+
+    <script>
+        // Remplace l'URL par celle de ton Worker Cloudflare
+        const workerUrl = 'https://ton-worker-davinci.cloudflareworkers.com/';
+
+        fetch(workerUrl)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('worker-response').textContent = JSON.stringify(data.response, null, 2);
+            })
+            .catch(err => {
+                document.getElementById('worker-response').textContent = 'Erreur : ' + err;
+            });
+    </script>
+</body>
+</html>
