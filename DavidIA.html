@@ -3,50 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bonjour David</title>
+    <title>Chat avec David</title>
     <style>
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
+            font-family: Arial;
+            padding: 20px;
         }
 
-        h1 {
-            font-size: 3em;
+        input, button {
+            font-size: 1em;
+            padding: 5px;
         }
 
-        pre {
+        #response {
             margin-top: 20px;
-            background: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 80%;
             white-space: pre-wrap;
-            word-wrap: break-word;
         }
     </style>
 </head>
 <body>
-    <h1>Bonjour David !</h1>
-    <pre id="worker-response">Chargement...</pre>
+
+    <h1>Parle à David !</h1>
+
+    <input type="text" id="userInput" placeholder="Écris ton message ici" size="50">
+    <button id="sendBtn">Envoyer</button>
+
+    <div id="response">Réponse de David apparaîtra ici...</div>
 
     <script>
-        // Remplace l'URL par celle de ton Worker Cloudflare
-        const workerUrl = 'https://odd-tree-5e8a.contact-isekaixr.workers.dev/';
+        const workerUrl = 'https://davidworker.contact-isekaixr.workers.dev';
 
-        fetch(workerUrl)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('worker-response').textContent = JSON.stringify(data.response, null, 2);
-            })
-            .catch(err => {
-                document.getElementById('worker-response').textContent = 'Erreur : ' + err;
-            });
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const message = document.getElementById('userInput').value;
+
+            if (!message) return;
+
+            // On envoie le message comme prompt au Worker
+            const payload = {
+                prompt: message
+            };
+
+            try {
+                const res = await fetch(workerUrl, {
+                    method: 'POST', // on peut envoyer en POST pour transmettre le prompt
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                // Affiche la réponse de l'IA
+                document.getElementById('response').textContent = data.response?.output_text || JSON.stringify(data);
+            } catch (err) {
+                document.getElementById('response').textContent = 'Erreur : ' + err;
+            }
+        });
     </script>
+
 </body>
 </html>
