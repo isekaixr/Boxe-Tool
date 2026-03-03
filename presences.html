@@ -53,12 +53,6 @@
             </iframe>
         </div>
 
-        <!-- ancien code -->
-        <!--
-        <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FRaviartPromotion&tabs=timeline&width=340&height=331&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId=2980190198857476" width="340" height="331" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
-
-        <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D100054460510551&tabs=timeline&width=340&height=331&small_header=false&adapt_container_width=false&hide_cover=false&show_facepile=true&appId=2980190198857476" width="340" height="331" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
-        -->
         <!-- CALENDRIER COMPÉTITIONS -->
         <h1 style="margin-top:30px;">Calendrier compétitions</h1>
         <div id="calendrierCompetitions" style="margin-top:10px;">
@@ -91,9 +85,10 @@
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
 
         // --- Charger les boxeurs ---
+        // --- Adapter le nom de la table Boxeurs ou Boxeurs_prod---
         async function loadBoxeursSelect() {
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs?select=id,LastName,FirstName`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs_prod?select=id,LastName,FirstName`, {
                     headers: {
                         "apikey": API_KEY,
                         "Authorization": "Bearer " + API_KEY
@@ -201,39 +196,26 @@
     <!-- Force re-parse et ajuste la hauteur si l'iframe est injectée plus tard -->
     <script>
         function forceFbHeight(px = 700) {
-            // cible l'iframe générée par FB
-            document.querySelectorAll('.fb_iframe_widget, .fb_iframe_widget iframe, .fb-page, .fb-page > span').forEach(el => {
-                el.style.minHeight = px + 'px';
-                el.style.height = px + 'px';
-            });
+            document
+                .querySelectorAll('.fb_iframe_widget, .fb_iframe_widget iframe, .fb-page, .fb-page > span')
+                .forEach(el => {
+                    el.style.minHeight = px + 'px';
+                    el.style.height = px + 'px';
+                });
         }
 
         window.addEventListener('load', () => {
-            // essaie de parse si le SDK est déjà prêt
             try {
                 if (window.FB && FB.XFBML && typeof FB.XFBML.parse === 'function') {
                     FB.XFBML.parse(document.getElementById('annonceResult') || document);
+                }
+            } catch (e) {
+                console.warn('FB parse unavailable on load:', e);
+            }
 
-                                                                    < !--Force re - parse et ajuste la hauteur si l'iframe est injectée plus tard -->
-                        < script>
-                        function forceFbHeight(px = 700) {
-                            // cible l'iframe générée par FB
-                            document.querySelectorAll('.fb_iframe_widget, .fb_iframe_widget iframe, .fb-page, .fb-page > span').forEach(el => {
-                                el.style.minHeight = px + 'px';
-                                el.style.height = px + 'px';
-                            });
-                        }
-
-                    window.addEventListener('load', () => {
-                        // essaie de parse si le SDK est déjà prêt
-                        try {
-                            if (window.FB && FB.XFBML && typeof FB.XFBML.parse === 'function') {
-                                FB.XFBML.parse(document.getElementById('annonceResult') || document);
-                            }
-                        } catch (e) {
-                            console.warn('FB parse unavailable on load:', e);
-                        }
-
-                                                                            // ensuite, forcer la hauteur après un petit délai (le widget a le temps de s'injecter)
+            // Ajuste la hauteur après le rendu FB
+            setTimeout(() => forceFbHeight(700), 1000);
+        });
+    </script>
 </body>
-</html >
+</html>
