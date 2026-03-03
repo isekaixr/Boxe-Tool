@@ -109,64 +109,65 @@
             }
         }
 
-        // --- Enregistrer présence (delete + insert) ---
-        async function enregistrerPresence(boxeurId, statut) {
-            try {
-                const today = new Date().toISOString().split('T')[0];
+// --- Enregistrer présence (delete + insert) ---
+async function enregistrerPresence(boxeurId, statut) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
 
-                await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY
-                    }
-                });
-
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        boxeur_id: boxeurId,
-                        date_cours: today,
-                        statut: statut
-                    })
-                });
-
-                if (!res.ok) throw new Error('Erreur insertion présence');
-
-                document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
-            } catch (err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
+        // DELETE sur Presences_dev
+        await fetch(`${SUPABASE_URL}/rest/v1/Presences_dev?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': API_KEY,
+                'Authorization': 'Bearer ' + API_KEY
             }
-        }
+        });
 
-        // --- Supprimer présence ---
-        async function supprimerPresence(boxeurId) {
-            try {
-                const today = new Date().toISOString().split('T')[0];
+        // POST sur Presences_dev
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences_dev`, {
+            method: 'POST',
+            headers: {
+                'apikey': API_KEY,
+                'Authorization': 'Bearer ' + API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                boxeur_id: boxeurId,
+                date_cours: today,
+                statut: statut
+            })
+        });
 
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY
-                    }
-                });
+        if (!res.ok) throw new Error('Erreur insertion présence');
 
-                document.getElementById('result').innerText = res.ok
-                    ? 'Présence annulée'
-                    : 'Erreur lors de l\'annulation';
-            } catch (err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
+        document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
+    } catch (err) {
+        console.error(err);
+        document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
+    }
+}
+
+// --- Supprimer présence ---
+async function supprimerPresence(boxeurId) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences_dev?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': API_KEY,
+                'Authorization': 'Bearer ' + API_KEY
             }
-        }
+        });
 
+        document.getElementById('result').innerText = res.ok
+            ? 'Présence annulée'
+            : 'Erreur lors de l\'annulation';
+    } catch (err) {
+        console.error(err);
+        document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
+    }
+}
         // --- Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeursSelect();
