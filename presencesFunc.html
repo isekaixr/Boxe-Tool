@@ -5,33 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion Présences</title>
     <style>
-        /* Conteneur du plugin Facebook : responsive jusqu'à 500px */
         .fb-container {
             max-width: 500px;
             width: 100%;
             margin-bottom: 30px;
             box-sizing: border-box;
             overflow: visible;
-            overflow: visible;
-            overflow: visible;
-            overflow: visible;
         }
-
-            /* Forcer le plugin à s'adapter à la largeur du conteneur */
-            .fb-container .fb-page {
-                width: 100% !important;
-            }
+        .fb-container .fb-page {
+            width: 100% !important;
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- ANNONCES -->
     <h1>Annonces</h1>
 
     <div id="annonceResult" style="margin-top:10px; font-weight:bold;">
-
-        <!-- FACEBOOK SDK -->
 
         <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
             <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FRaviartPromotion&tabs=timeline&width=340&height=700&small_header=false&adapt_container_width=false&hide_cover=false&show_facepile=true&appId=2980190198857476"
@@ -53,13 +44,11 @@
             </iframe>
         </div>
 
-        <!-- CALENDRIER COMPÉTITIONS -->
         <h1 style="margin-top:30px;">Calendrier compétitions</h1>
         <div id="calendrierCompetitions" style="margin-top:10px;">
             À venir…
         </div>
 
-        <!-- ACTION PRINCIPALE -->
         <h1 style="margin-top:40px;">Enregistrer la présence d'un boxeur</h1>
 
         <label for="boxeurSelect">Choisissez un boxeur :</label>
@@ -75,17 +64,14 @@
             <button id="supprimerBtn" style="margin-left:10px;">Absent</button>
         </div>
 
-        <!-- RESULT ACTION -->
         <div id="result" style="margin-top:20px; font-weight:bold;"></div>
     </div>
 
-    <!-- SCRIPT SUPABASE (inchangé) -->
     <script>
         const API_KEY = 'sb_publishable_ortsq5JcE7acoRZ_jfJXgg_0V6gmnkz';
         const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
 
-        // --- Charger les boxeurs ---
-        // --- Adapter le nom de la table Boxeurs ou Boxeurs_prod---
+        // Charger les boxeurs
         async function loadBoxeursSelect() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs_prod?select=id,LastName,FirstName`, {
@@ -109,65 +95,47 @@
             }
         }
 
-        // --- Enregistrer présence (delete + insert) ---
-        async function enregistrerPresence(boxeurId, statut) {
+        // Appel à la Edge Function
+        async function enregistrerPresenceViaFunction(boxeurId, statut) {
             try {
                 const today = new Date().toISOString().split('T')[0];
 
-                await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY
+                const res = await fetch(
+                    `${SUPABASE_URL}/functions/v1/hyper-endpoint`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer " + API_KEY
+                        },
+                        body: JSON.stringify({
+                            boxeur_id: boxeurId,
+                            statut: statut,
+                            date_cours: today
+                        })
                     }
-                });
+                );
 
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        boxeur_id: boxeurId,
-                        date_cours: today,
-                        statut: statut
-                    })
-                });
+                const data = await res.json();
 
-                if (!res.ok) throw new Error('Erreur insertion présence');
+                if (!res.ok) {
+                    document.getElementById('result').innerText = "Erreur via fonction";
+                    return;
+                }
 
-                document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
+                document.getElementById('result').innerText = data.message;
             } catch (err) {
                 console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
+                document.getElementById('result').innerText = "Erreur lors de l'enregistrement";
             }
         }
 
-        // --- Supprimer présence ---
-        async function supprimerPresence(boxeurId) {
-            try {
-                const today = new Date().toISOString().split('T')[0];
-
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'apikey': API_KEY,
-                        'Authorization': 'Bearer ' + API_KEY
-                    }
-                });
-
-                document.getElementById('result').innerText = res.ok
-                    ? 'Présence annulée'
-                    : 'Erreur lors de l\'annulation';
-            } catch (err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
-            }
+        // Supprimer présence via fonction (statut = null)
+        async function supprimerPresenceViaFunction(boxeurId) {
+            enregistrerPresenceViaFunction(boxeurId, null);
         }
 
-        // --- Listeners ---
+        // Listeners
         document.addEventListener('DOMContentLoaded', () => {
             loadBoxeursSelect();
 
@@ -178,7 +146,7 @@
                         alert('Veuillez choisir un boxeur');
                         return;
                     }
-                    enregistrerPresence(select.value, btn.dataset.statut);
+                    enregistrerPresenceViaFunction(select.value, btn.dataset.statut);
                 });
             });
 
@@ -188,34 +156,10 @@
                     alert('Veuillez choisir un boxeur');
                     return;
                 }
-                supprimerPresence(select.value);
+                supprimerPresenceViaFunction(select.value);
             });
         });
     </script>
 
-    <!-- Force re-parse et ajuste la hauteur si l'iframe est injectée plus tard -->
-    <script>
-        function forceFbHeight(px = 700) {
-            document
-                .querySelectorAll('.fb_iframe_widget, .fb_iframe_widget iframe, .fb-page, .fb-page > span')
-                .forEach(el => {
-                    el.style.minHeight = px + 'px';
-                    el.style.height = px + 'px';
-                });
-        }
-
-        window.addEventListener('load', () => {
-            try {
-                if (window.FB && FB.XFBML && typeof FB.XFBML.parse === 'function') {
-                    FB.XFBML.parse(document.getElementById('annonceResult') || document);
-                }
-            } catch (e) {
-                console.warn('FB parse unavailable on load:', e);
-            }
-
-            // Ajuste la hauteur après le rendu FB
-            setTimeout(() => forceFbHeight(700), 1000);
-        });
-    </script>
 </body>
 </html>
