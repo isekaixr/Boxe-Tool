@@ -243,34 +243,44 @@
       </section>
     </div>
 
-    <!-- LIGNE 2 : Présences + Pas en ordre -->
-    <div class="bottom-grid">
-      <section class="win" id="presences">
-        <div class="win-bar"><span class="dot"></span><span class="title">Présences du jour</span><span class="ctrls">— □ ×</span></div>
+    <!-- LIGNE 2 : Admin Calendrier + Admin Posts + Pas en ordre -->
+    <div class="bottom-grid" style="grid-template-columns:1fr 1fr">
+      <section class="win" id="adminCalendrier">
+        <div class="win-bar"><span class="dot"></span><span class="title">Admin — Calendrier compétitions</span><span class="ctrls">— □ ×</span></div>
         <div class="win-body">
-          <h3 style="margin-top:0">Enregistrer la présence</h3>
-          <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <label>Boxeur :</label>
-            <div style="position:relative">
-              <input type="text" id="boxeurInputPresence" placeholder="Tapez un nom..." autocomplete="off" style="border:1px solid #aaa;border-radius:4px;padding:5px 7px;font-size:13px;width:160px">
-              <input type="hidden" id="boxeurSelectPresence">
-              <div id="suggestionsPresence" class="suggestions"></div>
-            </div>
-            <button class="btn-suppr" data-target="boxeurSelectPresence" title="Supprimer ce boxeur" style="background:#fff;border:1px solid #d1a0a0;color:#991b1b;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;">🗑️ Supprimer</button>
-            <label for="presenceDate" style="margin-left:8px">Date :</label>
-            <input type="date" id="presenceDate">
+          <h3 style="margin-top:0">Ajouter un évènement</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label>Date : <input type="date" id="calDate" style="width:100%"></label>
+            <label>Heure : <input type="time" id="calHeure" style="width:100%"></label>
           </div>
-          <div class="presence-btns">
-            <button data-statut="Present" class="btn-present">Présent</button>
-            <button data-statut="Retard" class="btn-retard">Retard</button>
-            <button data-statut="Blessure" class="btn-blessure">Blessure</button>
-            <button data-statut="Exclusion" class="btn-exclu">Exclu</button>
-            <button id="supprimerBtn" class="btn-absent">Absent ✕</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <label>Lieu : <input type="text" id="calLieu" placeholder="Tournai..." style="width:100%"></label>
+            <label>Discipline : <select id="calDiscipline" style="width:100%"><option value="Boxe Française">Boxe Française</option><option value="Boxe Anglaise">Boxe Anglaise</option></select></label>
           </div>
-          <div id="resultPresence" style="margin-top:12px;font-weight:700;font-size:13px;min-height:18px"></div>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <button id="calAddBtn" class="primary">Ajouter</button><span id="calResult" style="font-size:12px;font-weight:700"></span>
+          </div>
+          <table id="calAdminTable" style="margin-top:12px"><thead><tr><th>Date</th><th>Heure</th><th>Lieu</th><th>Type</th><th></th></tr></thead><tbody><tr><td colspan="5">Chargement...</td></tr></tbody></table>
         </div>
       </section>
 
+      <section class="win" id="adminPosts">
+        <div class="win-bar"><span class="dot"></span><span class="title">Admin — Posts Facebook</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <h3 style="margin-top:0">Publier un post</h3>
+          <label style="display:block">Colonne :
+            <select id="postClub" style="width:100%;margin-top:4px"><option value="Raviart">Gauche — Raviart Promotion</option><option value="Tournai">Droite — Tournai Savate (Boxe Française)</option></select>
+          </label>
+          <label style="display:block;margin-top:8px">Lien Facebook : <input type="text" id="postUrl" placeholder="https://www.facebook.com/... " style="width:100%;margin-top:4px"></label>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <button id="postAddBtn" class="primary">Publier</button><span id="postResult" style="font-size:12px;font-weight:700"></span>
+          </div>
+          <table id="postsAdminTable" style="margin-top:12px"><thead><tr><th>Colonne</th><th>Lien</th><th>Date</th><th></th></tr></thead><tbody><tr><td colspan="4">Chargement...</td></tr></tbody></table>
+          <p style="font-size:11px;opacity:.6;margin-top:8px">Gauche = Raviart, Droite = Tournai. Colle l'URL, elle apparaît dans la bonne colonne sur Présences.</p>
+        </div>
+      </section>
+    </div>
+    <div class="bottom-grid" style="margin-top:18px">
       <section class="win">
         <div class="win-bar"><span class="dot"></span><span class="title">Boxeurs pas en ordre</span><span class="ctrls">— □ ×</span></div>
         <div class="win-body">
@@ -303,6 +313,8 @@ const SUPABASE_URL = SUPABASE_CONFIG.URL;
 const SUPABASE_BOXEURS = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.BOXEURS}`;
 const SUPABASE_PRESENCES = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.PRESENCES}`;
 const SUPABASE_LIC = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.LICENCES}`;
+const SUPABASE_CAL = `${SUPABASE_URL}/rest/v1/calendrier`;
+const SUPABASE_POSTS = `${SUPABASE_URL}/rest/v1/posts`;
 
 // UI helpers
 document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
@@ -509,9 +521,9 @@ function clearAutocomplete(inputEl, hiddenEl, sugEl){
 function syncAllInputs(id){
   const b=getBoxeurById(id);
   const name=b?`${b.LastName} ${b.FirstName||""}`.trim():"";
-  [["boxeurInputProfil","boxeurSelectProfil"],["boxeurInputLicence","boxeurSelectLicence"],["boxeurInputPresence","boxeurSelectPresence"]].forEach(([inp,hid])=>{
+  [["boxeurInputProfil","boxeurSelectProfil"],["boxeurInputLicence","boxeurSelectLicence"]].forEach(([inp,hid])=>{
     const inpEl=document.getElementById(inp), hidEl=document.getElementById(hid);
-    if(hidEl.value!==id){ hidEl.value=id||""; inpEl.value=name; }
+    if(hidEl && inpEl && hidEl.value!==id){ hidEl.value=id||""; inpEl.value=name; }
   });
 }
 function setupAutocomplete(inputId, hiddenId, sugId, onSelect){
@@ -525,10 +537,9 @@ function setupAutocomplete(inputId, hiddenId, sugId, onSelect){
 async function populateSelects(){
   const list = await getBoxeurs();
   boxeursCache=list;
-  // setup autocompletes
+  // setup autocompletes (plus de présence dans dashboard)
   setupAutocomplete("boxeurInputProfil","boxeurSelectProfil","suggestionsProfil", (id)=>{ syncAllInputs(id); onProfilChange(); if(id) loadLicenceCotisation(id); else clearForm(); });
   setupAutocomplete("boxeurInputLicence","boxeurSelectLicence","suggestionsLicence", (id)=>{ syncAllInputs(id); onProfilChange(); if(id) loadLicenceCotisation(id); else clearForm(); });
-  setupAutocomplete("boxeurInputPresence","boxeurSelectPresence","suggestionsPresence", (id)=>{ syncAllInputs(id); });
 }
 
 // ---------- PROFIL LOGIC ----------
@@ -634,6 +645,95 @@ async function supprimerPresence(boxeurId){
   }catch(e){document.getElementById('resultPresence').textContent="❌ Erreur annulation";}
 }
 
+// ---------- ADMIN CALENDRIER ----------
+async function loadCalendrierAdmin(){
+  const tbody=document.querySelector('#calAdminTable tbody');
+  if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="5">Chargement...</td></tr>';
+  try{
+    const res=await fetch(`${SUPABASE_CAL}?select=*&order=date.asc,heure.asc`,{headers:sbHeaders()});
+    const data=await res.json();
+    tbody.innerHTML='';
+    if(!Array.isArray(data) || data.length===0){ tbody.innerHTML='<tr><td colspan="5">Aucun évènement</td></tr>'; return; }
+    data.forEach(ev=>{
+      const tr=document.createElement('tr');
+      const badge=ev.discipline==='Boxe Anglaise'?'🔴':'🔵';
+      tr.innerHTML=`<td>${ev.date||''}</td><td>${(ev.heure||'').slice(0,5)}</td><td>${ev.lieu||''}</td><td>${badge} ${ev.discipline||''}</td><td><button onclick="deleteCalEvent(${ev.id})" style="color:#991b1b;border:1px solid #d1a0a0;background:#fff;border-radius:4px;padding:2px 6px;cursor:pointer">✕</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }catch(e){ tbody.innerHTML='<tr><td colspan="5">Erreur</td></tr>'; }
+}
+async function addCalendrierEvent(){
+  const date=document.getElementById('calDate').value, heure=document.getElementById('calHeure').value, lieu=document.getElementById('calLieu').value.trim(), discipline=document.getElementById('calDiscipline').value;
+  const out=document.getElementById('calResult');
+  if(!date || !lieu){ out.textContent="Date et lieu obligatoires"; return; }
+  out.textContent="...";
+  try{
+    const res=await fetch(SUPABASE_CAL,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({date,heure:heure||null,lieu,discipline})});
+    if(!res.ok) throw new Error(await res.text());
+    out.textContent="✅ Ajouté"; document.getElementById('calLieu').value="";
+    loadCalendrierAdmin();
+  }catch(e){ out.textContent="❌ Erreur"; console.error(e); }
+}
+async function deleteCalEvent(id){
+  if(!confirm("Supprimer cet évènement ?")) return;
+  await fetch(`${SUPABASE_CAL}?id=eq.${id}`,{method:'DELETE',headers:sbHeaders()});
+  loadCalendrierAdmin();
+}
+
+// ---------- ADMIN POSTS ----------
+async function loadPostsAdmin(){
+  const tbody=document.querySelector('#postsAdminTable tbody');
+  if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="4">Chargement...</td></tr>';
+  // tente avec colonne club, sinon fallback sans
+  let data=null;
+  for(const sel of ["*","id,facebook_url,created_at"]){
+    try{
+      const res=await fetch(`${SUPABASE_POSTS}?select=${sel}&order=created_at.desc`,{headers:sbHeaders()});
+      const j=await res.json();
+      if(Array.isArray(j)){ data=j; break; }
+      if(j && j.message && j.message.includes("club")) continue;
+    }catch(e){ continue; }
+  }
+  try{
+    tbody.innerHTML='';
+    if(!Array.isArray(data) || data.length===0){ tbody.innerHTML='<tr><td colspan="4">Aucun post</td></tr>'; return; }
+    data.forEach(p=>{
+      const tr=document.createElement('tr');
+      const short=p.facebook_url.length>40?p.facebook_url.slice(0,40)+"...":p.facebook_url;
+      const d=p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):"";
+      const club=p.club||"Raviart";
+      const badge=club==='Tournai'?'🔵 Tournai':'🔴 Raviart';
+      tr.innerHTML=`<td>${badge}</td><td title="${p.facebook_url}"><a href="${p.facebook_url}" target="_blank">${short}</a></td><td>${d}</td><td><button onclick="deletePost(${p.id})" style="color:#991b1b;border:1px solid #d1a0a0;background:#fff;border-radius:4px;padding:2px 6px;cursor:pointer">✕</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }catch(e){ tbody.innerHTML='<tr><td colspan="4">Erreur</td></tr>'; }
+}
+async function addPost(){
+  const url=document.getElementById('postUrl').value.trim(), club=document.getElementById('postClub').value, out=document.getElementById('postResult');
+  if(!url || !url.includes("facebook.com")){ out.textContent="URL Facebook invalide"; return; }
+  out.textContent="...";
+  // tente avec club, sinon sans si colonne pas encore créée
+  let payload={facebook_url:url, club}, ok=false, err="";
+  for(const pl of [payload, {facebook_url:url}]){
+    try{
+      const res=await fetch(SUPABASE_POSTS,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify(pl)});
+      if(res.ok){ ok=true; break; }
+      const t=await res.text();
+      if(t.includes("club")) continue;
+      err=t; break;
+    }catch(e){ err=e.message; }
+  }
+  if(ok){ out.textContent="✅ Publié"; document.getElementById('postUrl').value=""; loadPostsAdmin(); }
+  else { out.textContent="❌ Erreur. Exécute: ALTER TABLE posts ADD COLUMN club TEXT DEFAULT 'Raviart'"; console.error(err); }
+}
+async function deletePost(id){
+  if(!confirm("Supprimer ce post ?")) return;
+  await fetch(`${SUPABASE_POSTS}?id=eq.${id}`,{method:'DELETE',headers:sbHeaders()});
+  loadPostsAdmin();
+}
+
 // ---------- NOT IN ORDER ----------
 async function loadBoxeursNotInOrderOptimized(){
   const tbody=document.querySelector('#notInOrderTable tbody');
@@ -668,9 +768,9 @@ async function loadBoxeursNotInOrderOptimized(){
 window.addEventListener('DOMContentLoaded', async ()=>{
   const now=new Date();
   document.getElementById('monthSelect').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  document.getElementById('presenceDate').value=new Date().toISOString().split('T')[0];
   await populateSelects();
   loadBoxeursNotInOrderOptimized();
+  loadCalendrierAdmin(); loadPostsAdmin();
   document.getElementById('monthSelect').addEventListener('change', onProfilChange);
   document.getElementById('licencetype').addEventListener('change', updateLicenceStatus);
   document.getElementById('licenceregdate').addEventListener('change', updateLicenceStatus);
@@ -693,16 +793,8 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('confirmSuppr').addEventListener('click', (e)=> { if(e.target.id==='confirmSuppr') hideConfirmSuppr(); });
   document.getElementById('saveBtn').addEventListener('click', saveLicenceCotisation);
   document.getElementById('addBoxeurBtn').addEventListener('click', addBoxeur);
-  document.querySelectorAll('button[data-statut]').forEach(btn=> btn.addEventListener('click',()=>{
-    const sel=document.getElementById('boxeurSelectPresence');
-    if(!sel.value){alert('Veuillez choisir un boxeur');return;}
-    enregistrerPresence(sel.value, btn.dataset.statut);
-  }));
-  document.getElementById('supprimerBtn').addEventListener('click',()=>{
-    const sel=document.getElementById('boxeurSelectPresence');
-    if(!sel.value){alert('Veuillez choisir un boxeur');return;}
-    supprimerPresence(sel.value);
-  });
+  document.getElementById('calAddBtn').addEventListener('click', addCalendrierEvent);
+  document.getElementById('postAddBtn').addEventListener('click', addPost);
   updateOverallStatus();
 });
 </script>
