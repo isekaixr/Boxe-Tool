@@ -25,12 +25,13 @@
     border-bottom:3px solid var(--rouge);
     box-shadow:0 4px 20px rgba(217,4,41,.4);
   }
-  .burger{
+  .burger,.nav-btn{
     width:36px;height:36px;
     border:1px solid var(--rouge);border-radius:6px;
     background:#1a0a0a;color:#fff;
     cursor:pointer;font-size:20px;
     display:grid;place-items:center;
+    text-decoration:none;
   }
   .topbar h1{font-family:'Anton',sans-serif;font-size:18px;letter-spacing:1px;text-transform:uppercase}
   .topbar h1 span{color:var(--rouge)}
@@ -89,11 +90,11 @@
   button{border:1px solid #999;background:#efefef;border-radius:4px;padding:5px 10px;font-size:13px;cursor:pointer}
   .presence-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .presence-btns button{flex:1;min-width:90px;padding:11px 8px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2)}
-  .btn-present{background:linear-gradient(180deg,#10b981,#059669);color:#fff;border-color:#0d9668}
-  .btn-retard{background:linear-gradient(180deg,#f59e0b,#d97706);color:#fff;border-color:#b45309}
-  .btn-blessure{background:linear-gradient(180deg,#8b5cf6,#7c3aed);color:#fff;border-color:#6d28d9}
-  .btn-exclu{background:linear-gradient(180deg,#ef4444,#dc2626);color:#fff;border-color:#991b1b}
-  .btn-absent{background:#fff;color:#333}
+  .btn-present{background:linear-gradient(180deg,#0e9f6e,#057a55);color:#fff;border-color:#04684a}
+  .btn-retard{background:linear-gradient(180deg,#d6930a,#b45309);color:#fff;border-color:#92400e}
+  .btn-blessure{background:linear-gradient(180deg,#7c6ec7,#5d4db3);color:#fff;border-color:#4c3fa0}
+  .btn-exclu{background:linear-gradient(180deg,#D90429,#8B0000);color:#fff;border-color:#5c0000}
+  .btn-absent{background:#f3f4f6;color:#333;border-color:#bbb}
   table{width:100%;border-collapse:collapse;margin-top:10px}
   th,td{border:1px solid #aaa;padding:6px 8px;text-align:left;font-size:13px}
   th{background:#f3f3f3}
@@ -102,17 +103,12 @@
 <body>
 
 <div class="topbar">
-  <button class="burger" id="burger" title="Menu">☰</button>
+  <a href="dashboard.html" class="nav-btn" title="Aller au Dashboard">⚙️</a>
   <h1>Raviart Promotion <span>— Dashboard</span></h1>
   <small id="todayLabel"></small>
 </div>
 
 <div class="layout">
-  <nav class="sidebar" id="sidebar">
-    <a href="presences.html" class="active">📅 Présence du jour</a>
-    <a href="dashboard.html">📊 Dashboard</a>
-  </nav>
-
   <main class="main">
 
     <!-- FACEBOOK : 2 pages côte à côte -->
@@ -190,28 +186,6 @@
 <script>
 // UI helpers
 document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-(() => {
-  const burger = document.getElementById('burger');
-  const sidebar = document.getElementById('sidebar');
-  burger.addEventListener('click', () => {
-    if (window.innerWidth <= 1100) {
-      sidebar.classList.toggle('open');
-      sidebar.classList.remove('collapsed');
-    } else {
-      if (sidebar.classList.contains('collapsed') || sidebar.classList.contains('open')) {
-        sidebar.classList.toggle('collapsed');
-        sidebar.classList.toggle('open');
-      } else {
-        sidebar.classList.add('collapsed');
-      }
-    }
-  });
-  document.addEventListener('click', (e) => {
-    if (window.innerWidth <= 1100 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== burger) {
-      sidebar.classList.remove('open');
-    }
-  });
-})();
 
 const SUPABASE_BOXEURS = `${SUPABASE_CONFIG.URL}/rest/v1/${SUPABASE_CONFIG.TABLES.BOXEURS}`;
 const SUPABASE_PRESENCES = `${SUPABASE_CONFIG.URL}/rest/v1/${SUPABASE_CONFIG.TABLES.PRESENCES}`;
