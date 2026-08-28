@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoxeTool - Dashboard</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.35)),
+      url('profil-bg.jpg') center/cover no-repeat fixed;
+    min-height:100vh;
+    color:#111;
+  }
+  /* Top bar + burger */
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    background:#1a0a0a;
+    color:#fff;
+    display:flex;align-items:center;gap:16px;
+    padding:10px 18px;
+    border-bottom:3px solid #ff1493;
+  }
+  .burger{
+    width:36px;height:36px;
+    border:1px solid #ff1493;border-radius:6px;
+    background:#2a0a0a;color:#fff;
+    cursor:pointer;font-size:20px;
+    display:grid;place-items:center;
+  }
+  .topbar h1{font-size:18px;letter-spacing:.5px}
+  .topbar small{opacity:.7;margin-left:auto;font-size:12px}
+
+  /* Sidebar */
+  .layout{display:flex}
+  .sidebar{
+    width:240px;min-height:calc(100vh - 53px);
+    background:#0f0f0f;color:#fff;
+    border-right:2px solid #ff1493;
+    padding:14px 10px;
+    transition:transform .25s;
+  }
+  .sidebar a{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:8px;
+    color:#fff;text-decoration:none;font-size:14px;
+    margin-bottom:6px;
+  }
+  .sidebar a.active, .sidebar a:hover{background:#ff1493;color:#fff}
+  .sidebar .sep{height:1px;background:#333;margin:12px 0}
+  .sidebar small{opacity:.55;padding:0 12px}
+
+  /* Main */
+  .main{flex:1;padding:18px;display:flex;flex-direction:column;gap:18px}
+
+  /* Fenêtres style capture (barre sombre + contenu blanc) */
+  .windows{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:18px;
+    align-items:start;
+  }
+  @media(max-width:1100px){ .windows{grid-template-columns:1fr} .sidebar{position:fixed;left:0;top:53px;bottom:0;transform:translateX(-100%);z-index:15} .sidebar.open{transform:translateX(0)} }
+
+  .win{
+    background:#fff;
+    border:2px solid #1a0a0a;
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .win-bar{
+    background:#1d0a0a;
+    color:#e8c9c9;
+    padding:7px 10px;
+    display:flex;align-items:center;gap:8px;
+    font-size:12px;
+    border-bottom:2px solid #ff1493;
+  }
+  .win-bar .dot{width:12px;height:12px;border-radius:50%;background:#ff1493;opacity:.9}
+  .win-bar .title{flex:1;font-weight:600;letter-spacing:.3px}
+  .win-bar .ctrls{opacity:.7}
+  .win-body{padding:18px 18px 14px}
+  .win-body h2{font-family: Georgia, serif; font-size:22px; margin-bottom:12px}
+  .win-body h3{font-family: Georgia, serif; font-size:16px; margin:14px 0 8px}
+  label{font-size:13px}
+  select, input[type=text], input[type=date], input[type=month]{
+    border:1px solid #aaa;border-radius:4px;padding:5px 7px;font-size:13px;
+  }
+  select{background:#fff}
+  button{
+    border:1px solid #999;background:#efefef;border-radius:4px;
+    padding:5px 10px;font-size:13px;cursor:pointer;
+  }
+  button.primary{background:#ff1493;color:#fff;border-color:#c70e73;font-weight:600}
+  button:hover{filter:brightness(1.05)}
+  .field{margin:6px 0}
+  .statut{
+    display:inline-block;padding:3px 8px;border-radius:999px;
+    font-size:12px;font-weight:700;
+  }
+  .statut.ok{background:#d1fae5;color:#065f46}
+  .statut.ko{background:#fee2e2;color:#991b1b}
+  .statut.wait{background:#fef3c7;color:#92400e}
+  .kpi{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px
+  }
+  .kpi div{
+    background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;
+    padding:10px;text-align:center;
+  }
+  .kpi strong{font-size:18px;display:block}
+  .kpi span{font-size:11px;opacity:.7}
+
+  /* Présences + Not in order en dessous */
+  .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:1100px){.bottom-grid{grid-template-columns:1fr}.kpi{grid-template-columns:repeat(2,1fr)}}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border:1px solid #aaa;padding:6px 8px;text-align:left;font-size:13px}
+  th{background:#f3f3f3;cursor:pointer}
+  .presence-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .presence-btns button{flex:1;min-width:90px;padding:10px;font-weight:700}
+  .btn-present{background:#10b981;color:#fff;border-color:#0d9668}
+  .btn-retard{background:#f59e0b;color:#fff;border-color:#d67f00}
+  .btn-blessure{background:#8b5cf6;color:#fff;border-color:#6d28d9}
+  .btn-exclu{background:#ef4444;color:#fff;border-color:#b91c1c}
+  .btn-absent{background:#fff;color:#333}
+  #result{margin-top:10px;font-weight:700;font-size:13px;min-height:18px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="burger" id="burger" title="Menu">☰</button>
+  <h1>🥊 BoxeTool — Dashboard</h1>
+  <small id="todayLabel"></small>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <a href="#" class="active">📊 Dashboard</a>
+    <a href="profil.html">👤 Profils</a>
+    <a href="licences_cotisations.html">📄 Licences & Cotisations</a>
+    <a href="presences.html">✅ Présences</a>
+    <div class="sep"></div>
+    <small>Navigation</small>
+    <a href="#profil">🔍 Profil des boxeurs</a>
+    <a href="#licences">💳 Gestion licences</a>
+    <a href="#presences">📅 Présence du jour</a>
+  </nav>
+
+  <main class="main">
+
+    <!-- LIGNE 1 : 2 fenêtres comme sur la capture -->
+    <div class="windows">
+
+      <!-- FENETRE GAUCHE : Profil -->
+      <section class="win" id="profil">
+        <div class="win-bar"><span class="dot"></span><span class="title">Page des profils — file:///C:/p/BoxeTool/profil.html</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <h2>Liste des Boxeurs</h2>
+          <h3>Profil des boxeurs</h3>
+
+          <div class="field">
+            <label for="boxeurSelectProfil">Choisissez un boxeur :</label>
+            <select id="boxeurSelectProfil"><option value="">-- Sélectionnez --</option></select>
+          </div>
+          <div class="field">
+            <label for="monthSelect">Sélectionnez un mois :</label>
+            <input type="month" id="monthSelect">
+          </div>
+
+          <div id="selectedResult" style="margin-top:14px;background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;padding:12px;">
+            <div id="lineID" style="font-weight:700;font-size:13px"></div>
+            <div id="lineNom" style="font-weight:700;font-size:13px"></div>
+            <div id="linePrenom" style="font-weight:700;font-size:13px"></div>
+            <div class="kpi" id="kpiPresences">
+              <div><strong id="kpiPresent">—</strong><span>Présent</span></div>
+              <div><strong id="kpiRetard">—</strong><span>Retard</span></div>
+              <div><strong id="kpiBlessure">—</strong><span>Blessure</span></div>
+              <div><strong id="kpiExclusion">—</strong><span>Exclusion</span></div>
+            </div>
+            <div id="linePresences" style="display:none"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FENETRE DROITE : Licences -->
+      <section class="win" id="licences">
+        <div class="win-bar"><span class="dot"></span><span class="title">Boxe Tool - Licences & Cotisations</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <h2>Gestion Licences & Cotisations</h2>
+          <div style="margin-bottom:12px;">
+            <h3 style="margin:0">Statut global : <span id="overallStatus" class="statut wait">—</span></h3>
+          </div>
+
+          <div style="background:#fff7fb;border:1px solid #ffc8e7;border-radius:8px;padding:10px;margin-bottom:12px">
+            <strong style="font-size:13px">Ajouter un nouveau boxeur</strong><br>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center">
+              <label>Nom : <input type="text" id="newLastName" style="width:130px"></label>
+              <label>Prénom : <input type="text" id="newFirstName" style="width:130px"></label>
+              <button id="addBoxeurBtn" class="primary">Ajouter</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="boxeurSelectLicence">Choisissez un boxeur :</label>
+            <select id="boxeurSelectLicence"><option value="">-- Sélectionnez --</option></select>
+          </div>
+
+          <h3>Licence</h3>
+          <div class="field"><label>Type: <select id="licencetype"><option value="">-- Sélectionnez --</option><option value="Boxe Anglaise">Boxe Anglaise</option><option value="Boxe Française">Boxe Française</option><option value="En Cours">En Cours</option></select></label></div>
+          <div class="field" id="labelRegDate"><label>Date règlement: <input type="date" id="licenceregdate"></label></div>
+          <div class="field">Status: <span id="licencestatus" class="statut wait">—</span></div>
+          <div class="field">Date expiration calculée: <span id="licenceexpiredate" data-prev="" style="font-weight:700"></span></div>
+
+          <h3>Cotisation</h3>
+          <div class="field"><label>Type (séance / mois) : <select id="cotisationtype"><option value="">— choisir —</option><option value="3">3€ (séance)</option><option value="1">1 mois</option><option value="5">5 mois</option><option value="10">10 mois</option></select></label></div>
+          <div class="field">Payé: <span id="cotisationstatus" class="statut wait">—</span></div>
+          <div class="field"><label>Date paiement: <input type="date" id="cotisationpaymentdate"></label></div>
+          <div class="field"><label>Date échéance: <input type="date" id="cotisationexpiredate" readonly style="background:#f3f3f3"></label></div>
+
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <button id="saveBtn" class="primary">Enregistrer</button>
+            <span id="resultLicence"></span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- LIGNE 2 : Présences + Pas en ordre -->
+    <div class="bottom-grid">
+      <section class="win" id="presences">
+        <div class="win-bar"><span class="dot"></span><span class="title">Présences du jour</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <h3 style="margin-top:0">Enregistrer la présence</h3>
+          <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label for="boxeurSelectPresence">Boxeur :</label>
+            <select id="boxeurSelectPresence"><option value="">-- Sélectionnez --</option></select>
+            <label for="presenceDate" style="margin-left:8px">Date :</label>
+            <input type="date" id="presenceDate">
+          </div>
+          <div class="presence-btns">
+            <button data-statut="Present" class="btn-present">Présent</button>
+            <button data-statut="Retard" class="btn-retard">Retard</button>
+            <button data-statut="Blessure" class="btn-blessure">Blessure</button>
+            <button data-statut="Exclusion" class="btn-exclu">Exclu</button>
+            <button id="supprimerBtn" class="btn-absent">Absent ✕</button>
+          </div>
+          <div id="resultPresence" style="margin-top:12px;font-weight:700;font-size:13px;min-height:18px"></div>
+        </div>
+      </section>
+
+      <section class="win">
+        <div class="win-bar"><span class="dot"></span><span class="title">Boxeurs pas en ordre</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <table id="notInOrderTable">
+            <thead><tr><th>Boxeur</th><th>Licence</th><th>Cotisation</th></tr></thead>
+            <tbody><tr><td colspan="3">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+// ---------- CONFIG centralisée ----------
+const API_KEY = SUPABASE_CONFIG.KEY;
+const SUPABASE_URL = SUPABASE_CONFIG.URL;
+const SUPABASE_BOXEURS = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.BOXEURS}`;
+const SUPABASE_PRESENCES = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.PRESENCES}`;
+const SUPABASE_LIC = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.LICENCES}`;
+
+// UI helpers
+document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+document.getElementById('burger').onclick = ()=> document.getElementById('sidebar').classList.toggle('open');
+
+// ---------- BOXEURS / PRESENCES (tables prod uniques) ----------
+async function getBoxeurs(){
+  try{
+    const res=await fetch(`${SUPABASE_BOXEURS}?select=id,LastName,FirstName`,{headers: sbHeaders()});
+    const j=await res.json();
+    if(!Array.isArray(j)){ console.warn('getBoxeurs response:', j); return []; }
+    return j;
+  }catch(e){console.error(e);return []}
+}
+async function getPresencesBoxeur(boxeurId, month, statut){
+  if(!boxeurId||!month||!statut) return 0;
+  const startMonth=month+"-01";
+  const [year,m]=month.split("-");
+  const endDay=new Date(year,parseInt(m),0).getDate();
+  const endMonth=`${month}-${String(endDay).padStart(2,'0')}`;
+  const url=`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=gte.${startMonth}&date_cours=lte.${endMonth}&statut=eq.${statut}&select=id`;
+  try{
+    const res=await fetch(url,{headers: sbHeaders()});
+    const data=await res.json(); return Array.isArray(data)?data.length:0;
+  }catch{return 0}
+}
+
+// ---------- COMMUN LICENCE / COTISATION ----------
+function calculateLicenceExpireDate(regDateStr){
+  if(!regDateStr) return '';
+  const d=new Date(regDateStr); d.setFullYear(d.getFullYear()+1);
+  return d.toISOString().split('T')[0];
+}
+function getLicenceStatusMessage(regDateStr){
+  if(!regDateStr) return "En cours";
+  const today=new Date().toISOString().split('T')[0];
+  const exp=calculateLicenceExpireDate(regDateStr);
+  if(regDateStr>today) return `Valide à partir du ${regDateStr}`;
+  return exp>=today?"Valide":"Expirée";
+}
+function getCotisationStatusMessage(paymentDateStr, expireStr){
+  if(!paymentDateStr) return "Non payé";
+  const today=new Date().toISOString().split('T')[0];
+  if(paymentDateStr>today) return `Payé à partir du ${paymentDateStr}`;
+  return (expireStr>=today)?"Payé":"Non payé";
+}
+function updateOverallStatus(){
+  const lic=document.getElementById('licencestatus').innerText;
+  const cot=document.getElementById('cotisationstatus').innerText;
+  const overall=document.getElementById('overallStatus');
+  const licM=lic.match(/Valide à partir du (\d{4}-\d{2}-\d{2})/);
+  const cotM=cot.match(/Payé à partir du (\d{4}-\d{2}-\d{2})/);
+  let txt="", cls="wait";
+  if(licM && cotM){ const d=licM[1]>cotM[1]?licM[1]:cotM[1]; txt=`En ordre à partir du ${d}`; cls="wait"; }
+  else if(licM){ txt=`En ordre à partir du ${licM[1]}`; cls="wait"; }
+  else if(cotM){ txt=`En ordre à partir du ${cotM[1]}`; cls="wait"; }
+  else if(lic==="Valide" && cot==="Payé"){ txt="En ordre"; cls="ok"; }
+  else { txt="Pas en ordre"; cls="ko"; }
+  overall.textContent=txt; overall.className="statut "+cls;
+}
+function updateLicenceStatus(){
+  const type=document.getElementById('licencetype').value;
+  const reg=document.getElementById('licenceregdate').value;
+  const expSpan=document.getElementById('licenceexpiredate');
+  const label=document.getElementById('labelRegDate');
+  const statusEl=document.getElementById('licencestatus');
+  if(type==="En Cours"){
+    label.style.display='none';
+    statusEl.textContent="En cours"; statusEl.className="statut wait";
+    expSpan.textContent=expSpan.getAttribute('data-prev')||'';
+  } else {
+    label.style.display='inline';
+    expSpan.textContent=calculateLicenceExpireDate(reg);
+    const msg=getLicenceStatusMessage(reg);
+    statusEl.textContent=msg;
+    statusEl.className="statut "+(msg==="Valide"?"ok":msg==="Expirée"?"ko":"wait");
+  }
+  updateCotisationStatus();
+}
+function updateCotisationStatus(){
+  const type=parseInt(document.getElementById('cotisationtype').value)||0;
+  const today=new Date().toISOString().split('T')[0];
+  const payInput=document.getElementById('cotisationpaymentdate');
+  let expStr='';
+  if(type===3){
+    const pd=payInput.value||today; expStr=pd; payInput.value=pd;
+  } else if(type>0 && payInput.value){
+    const exp=new Date(payInput.value); exp.setMonth(exp.getMonth()+type); expStr=exp.toISOString().split('T')[0];
+  }
+  document.getElementById('cotisationexpiredate').value=expStr;
+  const msg=getCotisationStatusMessage(payInput.value,expStr);
+  const el=document.getElementById('cotisationstatus');
+  el.textContent=msg||"Non payé";
+  el.className="statut "+(msg==="Payé"?"ok":msg==="Non payé"?"ko":"wait");
+  updateOverallStatus();
+}
+function clearForm(){
+  document.getElementById('licencetype').value='';
+  document.getElementById('licenceregdate').value='';
+  document.getElementById('licencestatus').textContent='—';
+  document.getElementById('licenceexpiredate').textContent='';
+  document.getElementById('cotisationtype').value='';
+  document.getElementById('cotisationstatus').textContent='—';
+  document.getElementById('cotisationpaymentdate').value='';
+  document.getElementById('cotisationexpiredate').value='';
+  updateOverallStatus();
+}
+
+// ---------- LOAD SELECTS ----------
+async function populateSelects(){
+  const list = await getBoxeurs();
+  const s1=document.getElementById('boxeurSelectProfil');
+  const s2=document.getElementById('boxeurSelectLicence');
+  const s3=document.getElementById('boxeurSelectPresence');
+  [s1,s2,s3].forEach(s=> s.innerHTML='<option value="">-- Sélectionnez --</option>');
+  list.forEach(b=>{
+    [s1,s2,s3].forEach(s=>{
+      const o=document.createElement('option');
+      o.value=b.id; o.textContent=`${b.LastName} ${b.FirstName}`;
+      o.dataset.lastname=b.LastName; o.dataset.firstname=b.FirstName;
+      s.appendChild(o.cloneNode(true));
+    });
+  });
+  // sync selects
+  function sync(val){ [s1,s2,s3].forEach(s=>{ if(s.value!==val) s.value=val; }); }
+  s1.addEventListener('change',()=>{
+    sync(s1.value);
+    onProfilChange();
+    if(s1.value) loadLicenceCotisation(s1.value);
+    else clearForm();
+  });
+  s2.addEventListener('change',()=>{
+    sync(s2.value);
+    onProfilChange();
+    if(s2.value) loadLicenceCotisation(s2.value);
+    else clearForm();
+  });
+  s3.addEventListener('change',()=> sync(s3.value));
+}
+
+// ---------- PROFIL LOGIC ----------
+async function onProfilChange(){
+  const sel=document.getElementById('boxeurSelectProfil');
+  const month=document.getElementById('monthSelect').value;
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){
+    document.getElementById('lineID').textContent='';
+    document.getElementById('lineNom').textContent='';
+    document.getElementById('linePrenom').textContent='';
+    ["Present","Retard","Blessure","Exclusion"].forEach(k=> document.getElementById('kpi'+k).textContent='—');
+    return;
+  }
+  document.getElementById('lineID').textContent="ID : "+opt.value;
+  document.getElementById('lineNom').textContent="Nom : "+(opt.dataset.lastname||'');
+  document.getElementById('linePrenom').textContent="Prénom : "+(opt.dataset.firstname||'');
+  if(!month) return;
+  const p=await getPresencesBoxeur(opt.value,month,"Present");
+  const r=await getPresencesBoxeur(opt.value,month,"Retard");
+  const b=await getPresencesBoxeur(opt.value,month,"Blessure");
+  const e=await getPresencesBoxeur(opt.value,month,"Exclusion");
+  document.getElementById('kpiPresent').textContent=p;
+  document.getElementById('kpiRetard').textContent=r;
+  document.getElementById('kpiBlessure').textContent=b;
+  document.getElementById('kpiExclusion').textContent=e;
+}
+
+// ---------- LICENCE LOAD/SAVE ----------
+async function loadLicenceCotisation(boxeurId){
+  try{
+    const res=await fetch(`${SUPABASE_LIC}?boxeur_id=eq.${boxeurId}`,{headers: sbHeaders()});
+    const data=await res.json();
+    if(data.length>0){
+      const l=data[0];
+      document.getElementById('licencetype').value=l.licencetype||'';
+      document.getElementById('licenceregdate').value=l.licenceregdate||'';
+      const lastExp=l.licenceregdate?calculateLicenceExpireDate(l.licenceregdate):'';
+      document.getElementById('licenceexpiredate').setAttribute('data-prev',lastExp);
+      updateLicenceStatus();
+      document.getElementById('cotisationtype').value=l.cotisationtype||'';
+      document.getElementById('cotisationpaymentdate').value=l.cotisationpaymentdate||'';
+      updateCotisationStatus();
+    } else clearForm();
+  }catch(e){console.error(e)}
+}
+async function saveLicenceCotisation(){
+  const boxeurId=document.getElementById('boxeurSelectLicence').value;
+  if(!boxeurId){ alert("Veuillez sélectionner un boxeur"); return; }
+  const payload={
+    boxeur_id: boxeurId,
+    licencetype: document.getElementById('licencetype').value,
+    licenceregdate: document.getElementById('licenceregdate').value||null,
+    cotisationtype: parseInt(document.getElementById('cotisationtype').value)||0,
+    cotisationpaymentdate: document.getElementById('cotisationpaymentdate').value||null
+  };
+  const out=document.getElementById('resultLicence');
+  out.textContent="Enregistrement...";
+  try{
+    await fetch(`${SUPABASE_LIC}?boxeur_id=eq.${boxeurId}`,{method:'DELETE',headers: sbHeaders()});
+    const res=await fetch(SUPABASE_LIC,{method:'POST',headers: sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error(await res.text());
+    out.textContent="✅ Licence et cotisation mises à jour";
+    loadLicenceCotisation(boxeurId); loadBoxeursNotInOrderOptimized();
+  }catch(e){console.error(e); out.textContent="❌ Erreur mise à jour";}
+}
+async function addBoxeur(){
+  const last=document.getElementById('newLastName').value.trim();
+  const first=document.getElementById('newFirstName').value.trim();
+  if(!last){alert("Nom obligatoire");return;}
+  try{
+    const res=await fetch(SUPABASE_BOXEURS,{method:'POST',headers: sbHeaders({'Content-Type':'application/json','Prefer':'return=representation'}),body:JSON.stringify({LastName:last,FirstName:first||null})});
+    if(!res.ok) throw new Error(await res.text());
+    document.getElementById('resultLicence').textContent="✅ Boxeur ajouté";
+    document.getElementById('newLastName').value=''; document.getElementById('newFirstName').value='';
+    await populateSelects(); loadBoxeursNotInOrderOptimized();
+  }catch(e){console.error(e); document.getElementById('resultLicence').textContent="❌ Erreur ajout";}
+}
+
+// ---------- PRESENCES (avec date choisie) ----------
+async function enregistrerPresence(boxeurId, statut){
+  try{
+    const dateInput=document.getElementById('presenceDate').value;
+    const today=dateInput || new Date().toISOString().split('T')[0];
+    await fetch(`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`,{method:'DELETE',headers: sbHeaders()});
+    const res=await fetch(SUPABASE_PRESENCES,{method:'POST',headers: sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({boxeur_id:boxeurId,date_cours:today,statut})});
+    if(!res.ok) throw new Error('insert');
+    document.getElementById('resultPresence').textContent=`✅ Présence enregistrée : ${statut}`;
+    onProfilChange();
+  }catch(e){document.getElementById('resultPresence').textContent="❌ Erreur enregistrement";}
+}
+async function supprimerPresence(boxeurId){
+  try{
+    const dateInput=document.getElementById('presenceDate').value;
+    const today=dateInput || new Date().toISOString().split('T')[0];
+    await fetch(`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`,{method:'DELETE',headers: sbHeaders()});
+    document.getElementById('resultPresence').textContent="✅ Présence annulée (Absent)";
+    onProfilChange();
+  }catch(e){document.getElementById('resultPresence').textContent="❌ Erreur annulation";}
+}
+
+// ---------- NOT IN ORDER ----------
+async function loadBoxeursNotInOrderOptimized(){
+  const tbody=document.querySelector('#notInOrderTable tbody');
+  tbody.innerHTML='<tr><td colspan="3">Chargement...</td></tr>';
+  try{
+    const query=`select=id,LastName,FirstName,${SUPABASE_CONFIG.TABLES.LICENCES}!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
+    const res=await fetch(`${SUPABASE_BOXEURS}?${query}`,{headers: sbHeaders()});
+    const boxeurs=await res.json();
+    tbody.innerHTML='';
+    boxeurs.forEach(b=>{
+      const l=b.licencesetcotisations && b.licencesetcotisations[0]?b.licencesetcotisations[0]:null;
+      let licS="En cours", cotS="Non payé";
+      if(l){
+        licS=getLicenceStatusMessage(l.licenceregdate);
+        const type=parseInt(l.cotisationtype)||0;
+        let exp='';
+        if(type===3) exp=l.cotisationpaymentdate||new Date().toISOString().split('T')[0];
+        else if(type>0 && l.cotisationpaymentdate){ const d=new Date(l.cotisationpaymentdate); d.setMonth(d.getMonth()+type); exp=d.toISOString().split('T')[0]; }
+        cotS=getCotisationStatusMessage(l.cotisationpaymentdate,exp);
+      }
+      if(!(licS==="Valide" && cotS==="Payé")){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${b.LastName} ${b.FirstName}</td><td>${licS}</td><td>${cotS}</td>`;
+        tbody.appendChild(tr);
+      }
+    });
+    if(!tbody.hasChildNodes()) tbody.innerHTML='<tr><td colspan="3">Tous les boxeurs sont en ordre 👍</td></tr>';
+  }catch(e){tbody.innerHTML='<tr><td colspan="3">Erreur chargement</td></tr>';}
+}
+
+// ---------- INIT ----------
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const now=new Date();
+  document.getElementById('monthSelect').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('presenceDate').value=new Date().toISOString().split('T')[0];
+  await populateSelects();
+  loadBoxeursNotInOrderOptimized();
+  document.getElementById('monthSelect').addEventListener('change', onProfilChange);
+  document.getElementById('licencetype').addEventListener('change', updateLicenceStatus);
+  document.getElementById('licenceregdate').addEventListener('change', updateLicenceStatus);
+  document.getElementById('cotisationtype').addEventListener('change', updateCotisationStatus);
+  document.getElementById('cotisationpaymentdate').addEventListener('change', updateCotisationStatus);
+  document.getElementById('saveBtn').addEventListener('click', saveLicenceCotisation);
+  document.getElementById('addBoxeurBtn').addEventListener('click', addBoxeur);
+  document.querySelectorAll('button[data-statut]').forEach(btn=> btn.addEventListener('click',()=>{
+    const sel=document.getElementById('boxeurSelectPresence');
+    if(!sel.value){alert('Veuillez choisir un boxeur');return;}
+    enregistrerPresence(sel.value, btn.dataset.statut);
+  }));
+  document.getElementById('supprimerBtn').addEventListener('click',()=>{
+    const sel=document.getElementById('boxeurSelectPresence');
+    if(!sel.value){alert('Veuillez choisir un boxeur');return;}
+    supprimerPresence(sel.value);
+  });
+  updateOverallStatus();
+});
+</script>
+</body>
+</html>
