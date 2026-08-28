@@ -98,6 +98,9 @@
   table{width:100%;border-collapse:collapse;margin-top:10px}
   th,td{border:1px solid #aaa;padding:6px 8px;text-align:left;font-size:13px}
   th{background:#f3f3f3}
+  .suggestions{position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;border-radius:4px;max-height:140px;overflow-y:auto;z-index:15;box-shadow:0 4px 12px rgba(0,0,0,.2);display:none}
+  .suggestion-item{padding:6px 8px;font-size:13px;cursor:pointer}
+  .suggestion-item:hover{background:var(--rouge);color:#fff}
 </style>
 </head>
 <body>
@@ -152,8 +155,12 @@
         <div class="win-body">
           <h3>Enregistrer la présence</h3>
           <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <label for="boxeurSelect">Boxeur :</label>
-            <select id="boxeurSelect"><option value="">-- Sélectionnez --</option></select>
+            <label>Boxeur :</label>
+            <div style="position:relative">
+              <input type="text" id="boxeurInput" placeholder="Tapez un nom..." autocomplete="off" style="border:1px solid #aaa;border-radius:4px;padding:5px 7px;font-size:13px;width:180px">
+              <input type="hidden" id="boxeurSelect">
+              <div id="suggestionsBoxeur" class="suggestions"></div>
+            </div>
             <label for="presenceDate" style="margin-left:8px">Date :</label>
             <input type="date" id="presenceDate">
           </div>
@@ -206,14 +213,56 @@ function getCotisationStatusMessage(paymentDateStr, expireStr){
   return (expireStr>=today)?"Payé":"Non payé";
 }
 
+let boxeursCache=[];
+function getBoxeurById(id){ return boxeursCache.find(b=>b.id===id); }
+function filterBoxeurs(q){
+  const nq=(q||"").trim().toLowerCase();
+  if(!nq) return boxeursCache.slice(0,3);
+  const scored=boxeursCache.map(b=>{
+    const full=(b.LastName+" "+(b.FirstName||"")).toLowerCase();
+    const last=(b.LastName||"").toLowerCase();
+    const first=(b.FirstName||"").toLowerCase();
+    let score=2;
+    if(full.startsWith(nq) || last.startsWith(nq) || first.startsWith(nq)) score=0;
+    else if(full.includes(nq)) score=1;
+    else return null;
+    return {b,score};
+  }).filter(x=>x).sort((a,b)=> a.score-b.score || a.b.LastName.localeCompare(b.b.LastName));
+  return scored.slice(0,3).map(x=>x.b);
+}
+function renderSuggestions(query, sugEl, inputEl, hiddenEl){
+  const list=filterBoxeurs(query);
+  sugEl.innerHTML="";
+  if(list.length===0){ sugEl.style.display="none"; return; }
+  list.forEach(b=>{
+    const div=document.createElement("div");
+    div.className="suggestion-item";
+    div.textContent=`${b.LastName} ${b.FirstName||""}`.trim();
+    div.addEventListener("mousedown", (e)=>{ e.preventDefault(); hiddenEl.value=b.id; inputEl.value=`${b.LastName} ${b.FirstName||""}`.trim(); sugEl.style.display="none"; });
+    sugEl.appendChild(div);
+  });
+  sugEl.style.display="block";
+}
 async function loadBoxeursSelect(){
-  try{
-    const res=await fetch(`${SUPABASE_BOXEURS}?select=id,LastName,FirstName`,{headers:sbHeaders()});
-    const data=await res.json();
-    const sel=document.getElementById('boxeurSelect');
-    sel.innerHTML='<option value="">-- Sélectionnez --</option>';
-    data.forEach(b=>{ const o=document.createElement('option');o.value=b.id;o.textContent=`${b.LastName} ${b.FirstName}`;sel.appendChild(o); });
-  }catch(e){console.error(e); document.getElementById('result').innerText="Erreur chargement boxeurs";}
+  const tryUrls = [
+    `${SUPABASE_BOXEURS}?select=id,LastName,FirstName&%22d%C3%A9sactiv%C3%A9%22=is.false`,
+    `${SUPABASE_BOXEURS}?select=id,LastName,FirstName`,
+  ];
+  for(const url of tryUrls){
+    try{
+      const res=await fetch(url,{headers:sbHeaders()});
+      const data=await res.json();
+      if(!Array.isArray(data)) continue;
+      const filtered = data.filter(b => b["désactivé"] !== true && b["desactive"] !== true);
+      boxeursCache=filtered;
+      const inputEl=document.getElementById('boxeurInput'), hiddenEl=document.getElementById('boxeurSelect'), sugEl=document.getElementById('suggestionsBoxeur');
+      inputEl.addEventListener("input", ()=>{ hiddenEl.value=""; renderSuggestions(inputEl.value, sugEl, inputEl, hiddenEl); });
+      inputEl.addEventListener("focus", ()=> renderSuggestions(inputEl.value, sugEl, inputEl, hiddenEl));
+      inputEl.addEventListener("blur", ()=> setTimeout(()=> sugEl.style.display="none",150));
+      return;
+    }catch(e){ continue; }
+  }
+  document.getElementById('result').innerText="Erreur chargement boxeurs";
 }
 async function enregistrerPresence(boxeurId, statut){
   try{
