@@ -1,222 +1,308 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion Présences</title>
-    <style>
-        /* Conteneur du plugin Facebook : responsive jusqu'à 500px */
-        .fb-container {
-            max-width: 500px;
-            width: 100%;
-            margin-bottom: 30px;
-            box-sizing: border-box;
-            overflow: visible;
-            overflow: visible;
-            overflow: visible;
-            overflow: visible;
-        }
-
-            /* Forcer le plugin à s'adapter à la largeur du conteneur */
-            .fb-container .fb-page {
-                width: 100% !important;
-            }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raviart Promotion - Présence du jour</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --noir:#0B0B0B; --noir2:#1A0A0A; --rouge:#D90429; --rouge-dark:#8B0000; --rouge-neon:#FF0033; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Oswald','Segoe UI',Arial,sans-serif;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.65)),
+      url('ring-bg.jpg') center/cover no-repeat fixed;
+    min-height:100vh;
+    color:#111;
+  }
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    background:var(--noir);
+    color:#fff;
+    display:flex;align-items:center;gap:16px;
+    padding:10px 18px;
+    border-bottom:3px solid var(--rouge);
+    box-shadow:0 4px 20px rgba(217,4,41,.4);
+  }
+  .burger{
+    width:36px;height:36px;
+    border:1px solid var(--rouge);border-radius:6px;
+    background:#1a0a0a;color:#fff;
+    cursor:pointer;font-size:20px;
+    display:grid;place-items:center;
+  }
+  .topbar h1{font-family:'Anton',sans-serif;font-size:18px;letter-spacing:1px;text-transform:uppercase}
+  .topbar h1 span{color:var(--rouge)}
+  .topbar small{opacity:.7;margin-left:auto;font-size:12px}
+  .layout{display:flex}
+  .sidebar{
+    width:240px;min-height:calc(100vh - 53px);
+    background:var(--noir);color:#fff;
+    border-right:2px solid var(--rouge);
+    padding:14px 10px;
+    transition:transform .25s;
+  }
+  .sidebar a{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:8px;
+    color:#fff;text-decoration:none;font-size:14px;
+    margin-bottom:6px;
+  }
+  .sidebar a.active, .sidebar a:hover{background:var(--rouge);color:#fff;box-shadow:0 0 10px rgba(217,4,41,.5)}
+  .main{flex:1;padding:18px;display:flex;flex-direction:column;gap:18px}
+  @media(max-width:1100px){ .sidebar{position:fixed;left:0;top:53px;bottom:0;transform:translateX(-100%);z-index:15} .sidebar.open{transform:translateX(0)} }
+  .sidebar.collapsed{transform:translateX(-100%);position:fixed;left:0;top:53px;bottom:0;z-index:15}
+  .sidebar.open{transform:translateX(0) !important}
+  /* Facebook + calendrier - fond transparent, pas de blanc autour */
+  .fb-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:18px;
+    background:transparent;border:none;padding:0;
+  }
+  @media(max-width:900px){ .fb-row{grid-template-columns:1fr} }
+  .fb-card{border:1px solid #ddd;background:#fff;display:flex;flex-direction:column;overflow:hidden}
+  .fb-card-header{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #eee}
+  .fb-card-header img{width:40px;height:40px;border:1px solid #ddd}
+  .fb-card-header strong{font-size:14px;display:block}
+  .fb-card-header span{font-size:12px;opacity:.7}
+  .fb-card-actions{display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #eee;background:#fafafa}
+  .fb-embed{display:flex;justify-content:center;align-items:start;background:#f5f5f5;padding:12px;flex:1}
+  .fb-embed iframe{display:block;margin:0 auto;max-width:100%;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+  .fb-card-actions button{font-size:12px;padding:4px 10px;border:1px solid #bbb;background:#e9e9e9;border-radius:4px;cursor:pointer}
+  .calendrier{
+    background:#fff;border:2px solid var(--noir2);border-radius:6px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.5);position:relative;overflow:hidden;
+  }
+  .calendrier::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--rouge),var(--rouge-neon),var(--rouge))}
+  .calendrier h2{font-family:'Anton',sans-serif;font-size:22px;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;color:var(--noir2)}
+  /* wins bas : pleine largeur comme demandé */
+  .bottom-grid{display:grid;grid-template-columns:1fr;gap:18px}
+  .win{background:#fff;border:2px solid var(--noir2);border-radius:6px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);position:relative}
+  .win::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--rouge),var(--rouge-neon),var(--rouge))}
+  .win-bar{background:linear-gradient(90deg,#0f0f0f 0%,#1d0a0a 100%);color:#e8c9c9;padding:7px 12px;display:flex;align-items:center;gap:8px;font-size:11px;border-bottom:2px solid var(--rouge);letter-spacing:.5px;text-transform:uppercase}
+  .win-bar .dot{width:10px;height:10px;border-radius:50%;background:var(--rouge);box-shadow:0 0 8px var(--rouge)}
+  .win-bar .title{flex:1;font-weight:600;letter-spacing:.3px}
+  .win-bar .ctrls{opacity:.7}
+  .win-body{padding:18px 18px 14px}
+  .win-body h3{font-size:14px;margin:0 0 10px}
+  label{font-size:13px}
+  select, input[type=date]{border:1px solid #aaa;border-radius:4px;padding:5px 7px;font-size:13px}
+  button{border:1px solid #999;background:#efefef;border-radius:4px;padding:5px 10px;font-size:13px;cursor:pointer}
+  .presence-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .presence-btns button{flex:1;min-width:90px;padding:11px 8px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .btn-present{background:linear-gradient(180deg,#10b981,#059669);color:#fff;border-color:#0d9668}
+  .btn-retard{background:linear-gradient(180deg,#f59e0b,#d97706);color:#fff;border-color:#b45309}
+  .btn-blessure{background:linear-gradient(180deg,#8b5cf6,#7c3aed);color:#fff;border-color:#6d28d9}
+  .btn-exclu{background:linear-gradient(180deg,#ef4444,#dc2626);color:#fff;border-color:#991b1b}
+  .btn-absent{background:#fff;color:#333}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border:1px solid #aaa;padding:6px 8px;text-align:left;font-size:13px}
+  th{background:#f3f3f3}
+</style>
 </head>
-
 <body>
 
-    <!-- ANNONCES -->
-    <h1>Annonces</h1>
+<div class="topbar">
+  <button class="burger" id="burger" title="Menu">☰</button>
+  <h1>Raviart Promotion <span>— Dashboard</span></h1>
+  <small id="todayLabel"></small>
+</div>
 
-    <div id="annonceResult" style="margin-top:10px; font-weight:bold;">
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <a href="presences.html" class="active">📅 Présence du jour</a>
+    <a href="dashboard.html">📊 Dashboard</a>
+  </nav>
 
-        <!-- FACEBOOK SDK -->
+  <main class="main">
 
-        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-            <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FRaviartPromotion&tabs=timeline&width=340&height=700&small_header=false&adapt_container_width=false&hide_cover=false&show_facepile=true&appId=2980190198857476"
-                    width="340" height="700"
-                    style="border:none;overflow:hidden"
-                    scrolling="no"
-                    frameborder="0"
-                    allowfullscreen="true"
-                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-            </iframe>
-
-            <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D100054460510551&tabs=timeline&width=340&height=700&small_header=false&adapt_container_width=false&hide_cover=false&show_facepile=true&appId=2980190198857476"
-                    width="340" height="700"
-                    style="border:none;overflow:hidden"
-                    scrolling="no"
-                    frameborder="0"
-                    allowfullscreen="true"
-                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-            </iframe>
+    <!-- FACEBOOK : 2 pages côte à côte -->
+    <div class="fb-row">
+      <div class="fb-card">
+        <div class="fb-card-header">
+          <img src="https://via.placeholder.com/40?text=R" alt="Raviart">
+          <div><strong>Raviart Promotion</strong><span>571 followers</span></div>
         </div>
-
-        <!-- CALENDRIER COMPÉTITIONS -->
-        <h1 style="margin-top:30px;">Calendrier compétitions</h1>
-        <div id="calendrierCompetitions" style="margin-top:10px;">
-            À venir…
+        <div class="fb-card-actions">
+          <button>👍 Suivre la Page</button><button>↗ Partager</button>
         </div>
-
-        <!-- ACTION PRINCIPALE -->
-        <h1 style="margin-top:40px;">Enregistrer la présence d'un boxeur ( table dev )</h1>
-
-        <label for="boxeurSelect">Choisissez un boxeur :</label>
-        <select id="boxeurSelect">
-            <option value="">-- Sélectionnez --</option>
-        </select>
-
-        <div style="margin-top:10px;">
-            <button data-statut="Present">Présent</button>
-            <button data-statut="Retard">Retard</button>
-            <button data-statut="Blessure">Blessure</button>
-            <button data-statut="Exclusion">Exclu</button>
-            <button id="supprimerBtn" style="margin-left:10px;">Absent</button>
+        <div class="fb-embed" style="background:#000">
+          <iframe src="https://www.facebook.com/plugins/video.php?height=476&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1790667841937788%2F&show_text=false&width=267&t=0" width="267" height="476" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
         </div>
-
-        <!-- RESULT ACTION -->
-        <div id="result" style="margin-top:20px; font-weight:bold;"></div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-header">
+          <img src="https://via.placeholder.com/40?text=T" alt="Tournai">
+          <div><strong>Tournai savate boxing</strong><span>1 639 followers</span></div>
+        </div>
+        <div class="fb-card-actions">
+          <a href="https://www.facebook.com/profile.php?id=100054460510551" target="_blank" style="text-decoration:none"><button>👍 Voir sur Facebook</button></a><a href="https://www.facebook.com/profile.php?id=100054460510551" target="_blank" style="text-decoration:none"><button>↗ Partager</button></a>
+        </div>
+        <div class="fb-embed" style="min-height:680px">
+          <iframe src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fpermalink.php%3Fstory_fbid%3Dpfbid0hNrXj8uuMLsJ5GF8nT8e7uS6uT26hvLv84WT36vyR5GAeqMF99sLVeZAouPmjCuel%26id%3D100054460510551&show_text=true&width=500" width="500" height="680" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+        </div>
+      </div>
     </div>
 
-    <!-- SCRIPT SUPABASE (inchangé) -->
-    <script>
-        const API_KEY = 'sb_publishable_ortsq5JcE7acoRZ_jfJXgg_0V6gmnkz';
-        const SUPABASE_URL = 'https://uxrfrtmahfymwuxgprsd.supabase.co';
+    <div class="calendrier">
+      <h2>Calendrier compétitions</h2>
+      <p style="margin-top:8px;font-size:14px">À venir...</p>
+      <div id="calendrierCompetitions"></div>
+    </div>
 
-        // --- Charger les boxeurs ---
-        // --- Adapter le nom de la table Boxeurs ou Boxeurs_prod---
-        async function loadBoxeursSelect() {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/Boxeurs_dev?select=id,LastName,FirstName`, {
-                    headers: {
-                        "apikey": API_KEY,
-                        "Authorization": "Bearer " + API_KEY
-                    }
-                });
-                const data = await res.json();
-                const select = document.getElementById('boxeurSelect');
+    <!-- BAS : Présences + Pas en ordre (même que dashboard) -->
+    <div class="bottom-grid">
+      <section class="win" id="presences">
+        <div class="win-bar"><span class="dot"></span><span class="title">Présences du jour</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <h3>Enregistrer la présence</h3>
+          <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label for="boxeurSelect">Boxeur :</label>
+            <select id="boxeurSelect"><option value="">-- Sélectionnez --</option></select>
+            <label for="presenceDate" style="margin-left:8px">Date :</label>
+            <input type="date" id="presenceDate">
+          </div>
+          <div class="presence-btns">
+            <button data-statut="Present" class="btn-present">Présent</button>
+            <button data-statut="Retard" class="btn-retard">Retard</button>
+            <button data-statut="Blessure" class="btn-blessure">Blessure</button>
+            <button data-statut="Exclusion" class="btn-exclu">Exclu</button>
+            <button id="supprimerBtn" class="btn-absent">Absent ✕</button>
+          </div>
+          <div id="result" style="margin-top:12px;font-weight:700;font-size:13px;min-height:18px"></div>
+        </div>
+      </section>
 
-                data.forEach(boxeur => {
-                    const option = document.createElement('option');
-                    option.value = boxeur.id;
-                    option.textContent = `${boxeur.LastName} ${boxeur.FirstName}`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Erreur loadBoxeursSelect :", error);
-                document.getElementById('result').innerText = "Erreur lors du chargement des boxeurs";
-            }
-        }
+      <section class="win">
+        <div class="win-bar"><span class="dot"></span><span class="title">Boxeurs pas en ordre</span><span class="ctrls">— □ ×</span></div>
+        <div class="win-body">
+          <table id="notInOrderTable">
+            <thead><tr><th>Boxeur</th><th>Licence</th><th>Cotisation</th></tr></thead>
+            <tbody><tr><td colspan="3">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
-// --- Enregistrer présence (delete + insert) ---
-async function enregistrerPresence(boxeurId, statut) {
-    try {
-        const today = new Date().toISOString().split('T')[0];
+  </main>
+</div>
 
-        // DELETE sur Presences_dev
-        await fetch(`${SUPABASE_URL}/rest/v1/Presences_dev?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-            method: 'DELETE',
-            headers: {
-                'apikey': API_KEY,
-                'Authorization': 'Bearer ' + API_KEY
-            }
-        });
-
-        // POST sur Presences_dev
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences_dev`, {
-            method: 'POST',
-            headers: {
-                'apikey': API_KEY,
-                'Authorization': 'Bearer ' + API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                boxeur_id: boxeurId,
-                date_cours: today,
-                statut: statut
-            })
-        });
-
-        if (!res.ok) throw new Error('Erreur insertion présence');
-
-        document.getElementById('result').innerText = `Présence enregistrée : ${statut}`;
-    } catch (err) {
-        console.error(err);
-        document.getElementById('result').innerText = 'Erreur lors de l\'enregistrement';
+<script src="js/config.js"></script>
+<script>
+// UI helpers
+document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+(() => {
+  const burger = document.getElementById('burger');
+  const sidebar = document.getElementById('sidebar');
+  burger.addEventListener('click', () => {
+    if (window.innerWidth <= 1100) {
+      sidebar.classList.toggle('open');
+      sidebar.classList.remove('collapsed');
+    } else {
+      if (sidebar.classList.contains('collapsed') || sidebar.classList.contains('open')) {
+        sidebar.classList.toggle('collapsed');
+        sidebar.classList.toggle('open');
+      } else {
+        sidebar.classList.add('collapsed');
+      }
     }
+  });
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1100 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== burger) {
+      sidebar.classList.remove('open');
+    }
+  });
+})();
+
+const SUPABASE_BOXEURS = `${SUPABASE_CONFIG.URL}/rest/v1/${SUPABASE_CONFIG.TABLES.BOXEURS}`;
+const SUPABASE_PRESENCES = `${SUPABASE_CONFIG.URL}/rest/v1/${SUPABASE_CONFIG.TABLES.PRESENCES}`;
+const SUPABASE_LIC = `${SUPABASE_CONFIG.URL}/rest/v1/${SUPABASE_CONFIG.TABLES.LICENCES}`;
+
+function getLicenceStatusMessage(regDateStr){
+  if(!regDateStr) return "En cours";
+  const d=new Date(regDateStr); d.setFullYear(d.getFullYear()+1);
+  const exp=d.toISOString().split('T')[0];
+  const today=new Date().toISOString().split('T')[0];
+  if(regDateStr>today) return `Valide à partir du ${regDateStr}`;
+  return exp>=today?"Valide":"Expirée";
+}
+function getCotisationStatusMessage(paymentDateStr, expireStr){
+  if(!paymentDateStr) return "Non payé";
+  const today=new Date().toISOString().split('T')[0];
+  if(paymentDateStr>today) return `Payé à partir du ${paymentDateStr}`;
+  return (expireStr>=today)?"Payé":"Non payé";
 }
 
-// --- Supprimer présence ---
-async function supprimerPresence(boxeurId) {
-    try {
-        const today = new Date().toISOString().split('T')[0];
-
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/Presences_dev?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`, {
-            method: 'DELETE',
-            headers: {
-                'apikey': API_KEY,
-                'Authorization': 'Bearer ' + API_KEY
-            }
-        });
-
-        document.getElementById('result').innerText = res.ok
-            ? 'Présence annulée'
-            : 'Erreur lors de l\'annulation';
-    } catch (err) {
-        console.error(err);
-        document.getElementById('result').innerText = 'Erreur lors de l\'annulation';
-    }
+async function loadBoxeursSelect(){
+  try{
+    const res=await fetch(`${SUPABASE_BOXEURS}?select=id,LastName,FirstName`,{headers:sbHeaders()});
+    const data=await res.json();
+    const sel=document.getElementById('boxeurSelect');
+    sel.innerHTML='<option value="">-- Sélectionnez --</option>';
+    data.forEach(b=>{ const o=document.createElement('option');o.value=b.id;o.textContent=`${b.LastName} ${b.FirstName}`;sel.appendChild(o); });
+  }catch(e){console.error(e); document.getElementById('result').innerText="Erreur chargement boxeurs";}
 }
-        // --- Listeners ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadBoxeursSelect();
+async function enregistrerPresence(boxeurId, statut){
+  try{
+    const dateInput=document.getElementById('presenceDate').value;
+    const today=dateInput || new Date().toISOString().split('T')[0];
+    await fetch(`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`,{method:'DELETE',headers:sbHeaders()});
+    const res=await fetch(SUPABASE_PRESENCES,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({boxeur_id:boxeurId,date_cours:today,statut})});
+    if(!res.ok) throw new Error('insert');
+    document.getElementById('result').textContent=`✅ Présence enregistrée : ${statut}`;
+  }catch(e){document.getElementById('result').textContent="❌ Erreur enregistrement";}
+}
+async function supprimerPresence(boxeurId){
+  try{
+    const dateInput=document.getElementById('presenceDate').value;
+    const today=dateInput || new Date().toISOString().split('T')[0];
+    await fetch(`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`,{method:'DELETE',headers:sbHeaders()});
+    document.getElementById('result').textContent="✅ Présence annulée (Absent)";
+  }catch(e){document.getElementById('result').textContent="❌ Erreur annulation";}
+}
+async function loadBoxeursNotInOrder(){
+  const tbody=document.querySelector('#notInOrderTable tbody');
+  tbody.innerHTML='<tr><td colspan="3">Chargement...</td></tr>';
+  try{
+    const query=`select=id,LastName,FirstName,${SUPABASE_CONFIG.TABLES.LICENCES}!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
+    const res=await fetch(`${SUPABASE_BOXEURS}?${query}`,{headers:sbHeaders()});
+    const boxeurs=await res.json();
+    tbody.innerHTML='';
+    boxeurs.forEach(b=>{
+      const l=b.licencesetcotisations && b.licencesetcotisations[0]?b.licencesetcotisations[0]:null;
+      let licS="En cours", cotS="Non payé";
+      if(l){
+        licS=getLicenceStatusMessage(l.licenceregdate);
+        const type=parseInt(l.cotisationtype)||0;
+        let exp='';
+        if(type===3) exp=l.cotisationpaymentdate||new Date().toISOString().split('T')[0];
+        else if(type>0 && l.cotisationpaymentdate){ const d=new Date(l.cotisationpaymentdate); d.setMonth(d.getMonth()+type); exp=d.toISOString().split('T')[0]; }
+        cotS=getCotisationStatusMessage(l.cotisationpaymentdate,exp);
+      }
+      if(!(licS==="Valide" && cotS==="Payé")){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${b.LastName} ${b.FirstName}</td><td>${licS}</td><td>${cotS}</td>`;
+        tbody.appendChild(tr);
+      }
+    });
+    if(!tbody.hasChildNodes()) tbody.innerHTML='<tr><td colspan="3">Tous les boxeurs sont en ordre 👍</td></tr>';
+  }catch(e){tbody.innerHTML='<tr><td colspan="3">Erreur chargement</td></tr>';}
+}
 
-            document.querySelectorAll('button[data-statut]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const select = document.getElementById('boxeurSelect');
-                    if (!select.value) {
-                        alert('Veuillez choisir un boxeur');
-                        return;
-                    }
-                    enregistrerPresence(select.value, btn.dataset.statut);
-                });
-            });
-
-            document.getElementById('supprimerBtn').addEventListener('click', () => {
-                const select = document.getElementById('boxeurSelect');
-                if (!select.value) {
-                    alert('Veuillez choisir un boxeur');
-                    return;
-                }
-                supprimerPresence(select.value);
-            });
-        });
-    </script>
-
-    <!-- Force re-parse et ajuste la hauteur si l'iframe est injectée plus tard -->
-    <script>
-        function forceFbHeight(px = 700) {
-            document
-                .querySelectorAll('.fb_iframe_widget, .fb_iframe_widget iframe, .fb-page, .fb-page > span')
-                .forEach(el => {
-                    el.style.minHeight = px + 'px';
-                    el.style.height = px + 'px';
-                });
-        }
-
-        window.addEventListener('load', () => {
-            try {
-                if (window.FB && FB.XFBML && typeof FB.XFBML.parse === 'function') {
-                    FB.XFBML.parse(document.getElementById('annonceResult') || document);
-                }
-            } catch (e) {
-                console.warn('FB parse unavailable on load:', e);
-            }
-
-            // Ajuste la hauteur après le rendu FB
-            setTimeout(() => forceFbHeight(700), 1000);
-        });
-    </script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  document.getElementById('presenceDate').value=new Date().toISOString().split('T')[0];
+  await loadBoxeursSelect();
+  loadBoxeursNotInOrder();
+  document.querySelectorAll('button[data-statut]').forEach(btn=> btn.addEventListener('click',()=>{
+    const sel=document.getElementById('boxeurSelect');
+    if(!sel.value){alert('Veuillez choisir un boxeur');return;}
+    enregistrerPresence(sel.value, btn.dataset.statut);
+  }));
+  document.getElementById('supprimerBtn').addEventListener('click',()=>{
+    const sel=document.getElementById('boxeurSelect');
+    if(!sel.value){alert('Veuillez choisir un boxeur');return;}
+    supprimerPresence(sel.value);
+  });
+});
+</script>
 </body>
 </html>

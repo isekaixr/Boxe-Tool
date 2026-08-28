@@ -4,41 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Raviart Promotion - Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
+  :root{ --noir:#0B0B0B; --noir2:#1A0A0A; --rouge:#D90429; --rouge-dark:#8B0000; --rouge-neon:#FF0033; }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family:'Oswald','Segoe UI',Arial,sans-serif;
     background:
-      linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.35)),
-      url('profil-bg.jpg') center/cover no-repeat fixed;
+      linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.88)),
+      url('raviart-logo.jpg') center/cover no-repeat fixed;
     min-height:100vh;
     color:#111;
   }
   /* Top bar + burger */
   .topbar{
     position:sticky;top:0;z-index:20;
-    background:#1a0a0a;
+    background:var(--noir);
     color:#fff;
     display:flex;align-items:center;gap:16px;
     padding:10px 18px;
-    border-bottom:3px solid #ff1493;
+    border-bottom:3px solid var(--rouge);
+    box-shadow:0 4px 20px rgba(217,4,41,.4);
   }
   .burger{
     width:36px;height:36px;
-    border:1px solid #ff1493;border-radius:6px;
-    background:#2a0a0a;color:#fff;
+    border:1px solid var(--rouge);border-radius:6px;
+    background:#1a0a0a;color:#fff;
     cursor:pointer;font-size:20px;
     display:grid;place-items:center;
   }
-  .topbar h1{font-size:18px;letter-spacing:.5px}
+  .topbar h1{font-family:'Anton',sans-serif;font-size:18px;letter-spacing:1px;text-transform:uppercase}
+  .topbar h1 span{color:var(--rouge)}
   .topbar small{opacity:.7;margin-left:auto;font-size:12px}
 
   /* Sidebar */
   .layout{display:flex}
   .sidebar{
     width:240px;min-height:calc(100vh - 53px);
-    background:#0f0f0f;color:#fff;
-    border-right:2px solid #ff1493;
+    background:var(--noir);color:#fff;
+    border-right:2px solid var(--rouge);
     padding:14px 10px;
     transition:transform .25s;
   }
@@ -48,7 +52,7 @@
     color:#fff;text-decoration:none;font-size:14px;
     margin-bottom:6px;
   }
-  .sidebar a.active, .sidebar a:hover{background:#ff1493;color:#fff}
+  .sidebar a.active, .sidebar a:hover{background:var(--rouge);color:#fff;box-shadow:0 0 10px rgba(217,4,41,.5)}
   .sidebar .sep{height:1px;background:#333;margin:12px 0}
   .sidebar small{opacity:.55;padding:0 12px}
 
@@ -69,25 +73,28 @@
 
   .win{
     background:#fff;
-    border:2px solid #1a0a0a;
+    border:2px solid var(--noir2);
     border-radius:6px;
     overflow:hidden;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+    position:relative;
   }
+  .win::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--rouge),var(--rouge-neon),var(--rouge))}
   .win-bar{
-    background:#1d0a0a;
+    background:linear-gradient(90deg,#0f0f0f 0%,#1d0a0a 100%);
     color:#e8c9c9;
-    padding:7px 10px;
+    padding:7px 12px;
     display:flex;align-items:center;gap:8px;
-    font-size:12px;
-    border-bottom:2px solid #ff1493;
+    font-size:11px;
+    border-bottom:2px solid var(--rouge);
+    letter-spacing:.5px;text-transform:uppercase;
   }
-  .win-bar .dot{width:12px;height:12px;border-radius:50%;background:#ff1493;opacity:.9}
+  .win-bar .dot{width:10px;height:10px;border-radius:50%;background:var(--rouge);box-shadow:0 0 8px var(--rouge)}
   .win-bar .title{flex:1;font-weight:600;letter-spacing:.3px}
   .win-bar .ctrls{opacity:.7}
   .win-body{padding:18px 18px 14px}
-  .win-body h2{font-family: Georgia, serif; font-size:22px; margin-bottom:12px}
-  .win-body h3{font-family: Georgia, serif; font-size:16px; margin:14px 0 8px}
+  .win-body h2{font-family:'Anton',sans-serif; font-size:20px; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px; color:var(--noir2)}
+  .win-body h3{font-family:'Anton',sans-serif; font-size:14px; margin:14px 0 8px; text-transform:uppercase; letter-spacing:.8px; color:var(--noir2)}
   label{font-size:13px}
   select, input[type=text], input[type=date], input[type=month]{
     border:1px solid #aaa;border-radius:4px;padding:5px 7px;font-size:13px;
@@ -97,7 +104,7 @@
     border:1px solid #999;background:#efefef;border-radius:4px;
     padding:5px 10px;font-size:13px;cursor:pointer;
   }
-  button.primary{background:#ff1493;color:#fff;border-color:#c70e73;font-weight:600}
+  button.primary{background:var(--rouge);color:#fff;border-color:var(--rouge-dark);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
   button:hover{filter:brightness(1.05)}
   .field{margin:6px 0}
   .statut{
@@ -124,11 +131,11 @@
   th,td{border:1px solid #aaa;padding:6px 8px;text-align:left;font-size:13px}
   th{background:#f3f3f3;cursor:pointer}
   .presence-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-  .presence-btns button{flex:1;min-width:90px;padding:10px;font-weight:700}
-  .btn-present{background:#10b981;color:#fff;border-color:#0d9668}
-  .btn-retard{background:#f59e0b;color:#fff;border-color:#d67f00}
-  .btn-blessure{background:#8b5cf6;color:#fff;border-color:#6d28d9}
-  .btn-exclu{background:#ef4444;color:#fff;border-color:#b91c1c}
+  .presence-btns button{flex:1;min-width:90px;padding:11px 8px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .btn-present{background:linear-gradient(180deg,#10b981,#059669);color:#fff;border-color:#0d9668}
+  .btn-retard{background:linear-gradient(180deg,#f59e0b,#d97706);color:#fff;border-color:#b45309}
+  .btn-blessure{background:linear-gradient(180deg,#8b5cf6,#7c3aed);color:#fff;border-color:#6d28d9}
+  .btn-exclu{background:linear-gradient(180deg,#ef4444,#dc2626);color:#fff;border-color:#991b1b}
   .btn-absent{background:#fff;color:#333}
   #result{margin-top:10px;font-weight:700;font-size:13px;min-height:18px}
 </style>
@@ -143,8 +150,8 @@
 
 <div class="layout">
   <nav class="sidebar" id="sidebar">
-    <a href="#" class="active">📊 Dashboard</a>
-    <a href="#presences">📅 Présence du jour</a>
+    <a href="presences.html">📅 Présence du jour</a>
+    <a href="dashboard.html" class="active">📊 Dashboard</a>
   </nav>
 
   <main class="main">
