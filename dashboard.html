@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BoxeTool - Dashboard</title>
+<title>Raviart Promotion - Dashboard</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{
@@ -63,6 +63,9 @@
     align-items:start;
   }
   @media(max-width:1100px){ .windows{grid-template-columns:1fr} .sidebar{position:fixed;left:0;top:53px;bottom:0;transform:translateX(-100%);z-index:15} .sidebar.open{transform:translateX(0)} }
+  /* burger desktop : permet de cacher/afficher aussi hors mobile */
+  .sidebar.collapsed{transform:translateX(-100%);position:fixed;left:0;top:53px;bottom:0;z-index:15}
+  .sidebar.open{transform:translateX(0) !important}
 
   .win{
     background:#fff;
@@ -134,20 +137,13 @@
 
 <div class="topbar">
   <button class="burger" id="burger" title="Menu">☰</button>
-  <h1>🥊 BoxeTool — Dashboard</h1>
+  <h1>Raviart Promotion <span>— Dashboard</span></h1>
   <small id="todayLabel"></small>
 </div>
 
 <div class="layout">
   <nav class="sidebar" id="sidebar">
     <a href="#" class="active">📊 Dashboard</a>
-    <a href="profil.html">👤 Profils</a>
-    <a href="licences_cotisations.html">📄 Licences & Cotisations</a>
-    <a href="presences.html">✅ Présences</a>
-    <div class="sep"></div>
-    <small>Navigation</small>
-    <a href="#profil">🔍 Profil des boxeurs</a>
-    <a href="#licences">💳 Gestion licences</a>
     <a href="#presences">📅 Présence du jour</a>
   </nav>
 
@@ -278,7 +274,28 @@ const SUPABASE_LIC = `${SUPABASE_URL}/rest/v1/${SUPABASE_CONFIG.TABLES.LICENCES}
 
 // UI helpers
 document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-document.getElementById('burger').onclick = ()=> document.getElementById('sidebar').classList.toggle('open');
+(() => {
+  const burger = document.getElementById('burger');
+  const sidebar = document.getElementById('sidebar');
+  burger.addEventListener('click', () => {
+    if (window.innerWidth <= 1100) {
+      sidebar.classList.toggle('open');
+      sidebar.classList.remove('collapsed');
+    } else {
+      if (sidebar.classList.contains('collapsed') || sidebar.classList.contains('open')) {
+        sidebar.classList.toggle('collapsed');
+        sidebar.classList.toggle('open');
+      } else {
+        sidebar.classList.add('collapsed');
+      }
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1100 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== burger) {
+      sidebar.classList.remove('open');
+    }
+  });
+})();
 
 // ---------- BOXEURS / PRESENCES (tables prod uniques) ----------
 async function getBoxeurs(){
