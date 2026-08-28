@@ -114,17 +114,8 @@
 <div class="layout">
   <main class="main">
 
-    <!-- 2 COLONNES FACEBOOK : Gauche Raviart / Droite Tournai (Boxe Française) -->
-    <div class="fb-row">
-      <div style="display:flex;flex-direction:column;gap:0">
-        <div style="background:var(--noir);color:#fff;padding:8px 12px;border-bottom:3px solid var(--rouge);font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:13px">⬅ Gauche — Raviart Promotion</div>
-        <div id="postsRaviart" style="display:flex;flex-direction:column;gap:18px;margin-top:18px"></div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:0">
-        <div style="background:var(--noir);color:#fff;padding:8px 12px;border-bottom:3px solid var(--rouge);font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:13px">Droite — Tournai Savate (Boxe Française) ➡</div>
-        <div id="postsTournai" style="display:flex;flex-direction:column;gap:18px;margin-top:18px"></div>
-      </div>
-    </div>
+    <!-- FLUX FACEBOOK : Raviart Promotion uniquement -->
+    <div id="postsRaviart" class="fb-row"></div>
 
     <div class="calendrier">
       <h2>Calendrier compétitions</h2>
@@ -274,7 +265,7 @@ function createFbCard(p){
   const card=document.createElement('div');
   card.className='fb-card';
   card.innerHTML=`
-    <div class="fb-card-header"><img src="https://via.placeholder.com/40?text=F" alt="FB"><div><strong>Facebook</strong><span>${p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):''}</span></div></div>
+    <div class="fb-card-header"><img src="https://via.placeholder.com/40?text=R" alt="Raviart"><div><strong>Raviart Promotion</strong><span>${p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):''}</span></div></div>
     <div class="fb-embed" style="${isReel?'background:#000;min-height:476px':'min-height:500px'}">
       <iframe src="${embedUrl}" width="${isReel?267:500}" height="${isReel?476:600}" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
     </div>
@@ -282,36 +273,22 @@ function createFbCard(p){
   return card;
 }
 async function loadPostsDynamic(){
-  const colR=document.getElementById('postsRaviart'), colT=document.getElementById('postsTournai');
-  if(!colR || !colT) return;
-  colR.innerHTML='<p style="padding:12px;background:#fff;border:1px solid #ddd">Chargement...</p>';
-  colT.innerHTML='<p style="padding:12px;background:#fff;border:1px solid #ddd">Chargement...</p>';
-  let data=null;
-  for(const sel of ["*","id,facebook_url,created_at"]){
-    try{
-      const res=await fetch(`${SUPABASE_POSTS}?select=${sel}&order=created_at.desc`,{headers:sbHeaders()});
-      const j=await res.json();
-      if(Array.isArray(j)){ data=j; break; }
-      if(j && j.message && j.message.includes("club")) continue;
-    }catch(e){ continue; }
-  }
+  const container=document.getElementById('postsRaviart');
+  if(!container) return;
+  container.innerHTML='<p style="padding:12px;background:#fff;border:1px solid #ddd">Chargement posts...</p>';
   try{
-    colR.innerHTML=''; colT.innerHTML='';
-    if(!Array.isArray(data) || data.length===0){
-      colR.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post Raviart</div>';
-      colT.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post Tournai</div>';
+    const res=await fetch(`${SUPABASE_POSTS}?select=*&order=created_at.desc`,{headers:sbHeaders()});
+    let data=await res.json();
+    if(!Array.isArray(data)) throw new Error("bad data");
+    // filtre Raviart uniquement si colonne club existe
+    if(data.length>0 && 'club' in data[0]) data=data.filter(p=>!p.club || p.club==='Raviart');
+    container.innerHTML='';
+    if(data.length===0){
+      container.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post pour le moment</div>';
       return;
     }
-    let hasR=false, hasT=false;
-    data.forEach(p=>{
-      const club=p.club || "Raviart";
-      const card=createFbCard(p);
-      if(club==="Tournai"){ colT.appendChild(card); hasT=true; }
-      else { colR.appendChild(card); hasR=true; }
-    });
-    if(!hasR) colR.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post Raviart</div>';
-    if(!hasT) colT.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post Tournai</div>';
-  }catch(e){ colR.innerHTML='<p>Erreur</p>'; colT.innerHTML='<p>Erreur</p>'; }
+    data.forEach(p=> container.appendChild(createFbCard(p)));
+  }catch(e){ container.innerHTML='<p>Erreur chargement posts</p>'; }
 }
 async function loadCalendrierDynamic(){
   const container=document.getElementById('calendrierCompetitions');

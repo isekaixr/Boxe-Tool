@@ -268,15 +268,12 @@
         <div class="win-bar"><span class="dot"></span><span class="title">Admin — Posts Facebook</span><span class="ctrls">— □ ×</span></div>
         <div class="win-body">
           <h3 style="margin-top:0">Publier un post</h3>
-          <label style="display:block">Colonne :
-            <select id="postClub" style="width:100%;margin-top:4px"><option value="Raviart">Gauche — Raviart Promotion</option><option value="Tournai">Droite — Tournai Savate (Boxe Française)</option></select>
-          </label>
-          <label style="display:block;margin-top:8px">Lien Facebook : <input type="text" id="postUrl" placeholder="https://www.facebook.com/... " style="width:100%;margin-top:4px"></label>
+          <label style="display:block">Lien Facebook : <input type="text" id="postUrl" placeholder="https://www.facebook.com/... " style="width:100%;margin-top:4px"></label>
           <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
             <button id="postAddBtn" class="primary">Publier</button><span id="postResult" style="font-size:12px;font-weight:700"></span>
           </div>
-          <table id="postsAdminTable" style="margin-top:12px"><thead><tr><th>Colonne</th><th>Lien</th><th>Date</th><th></th></tr></thead><tbody><tr><td colspan="4">Chargement...</td></tr></tbody></table>
-          <p style="font-size:11px;opacity:.6;margin-top:8px">Gauche = Raviart, Droite = Tournai. Colle l'URL, elle apparaît dans la bonne colonne sur Présences.</p>
+          <table id="postsAdminTable" style="margin-top:12px"><thead><tr><th>Lien</th><th>Date</th><th></th></tr></thead><tbody><tr><td colspan="3">Chargement...</td></tr></tbody></table>
+          <p style="font-size:11px;opacity:.6;margin-top:8px">Colle l'URL du post/reel Facebook Raviart, il apparaîtra sur la page Présences.</p>
         </div>
       </section>
     </div>
@@ -685,48 +682,37 @@ async function deleteCalEvent(id){
 async function loadPostsAdmin(){
   const tbody=document.querySelector('#postsAdminTable tbody');
   if(!tbody) return;
-  tbody.innerHTML='<tr><td colspan="4">Chargement...</td></tr>';
-  // tente avec colonne club, sinon fallback sans
-  let data=null;
-  for(const sel of ["*","id,facebook_url,created_at"]){
-    try{
-      const res=await fetch(`${SUPABASE_POSTS}?select=${sel}&order=created_at.desc`,{headers:sbHeaders()});
-      const j=await res.json();
-      if(Array.isArray(j)){ data=j; break; }
-      if(j && j.message && j.message.includes("club")) continue;
-    }catch(e){ continue; }
-  }
+  tbody.innerHTML='<tr><td colspan="3">Chargement...</td></tr>';
   try{
+    const res=await fetch(`${SUPABASE_POSTS}?select=*&order=created_at.desc`,{headers:sbHeaders()});
+    let data=await res.json();
+    // filtre uniquement Raviart si colonne club existe
+    if(Array.isArray(data) && data[0] && 'club' in data[0]) data=data.filter(p=>!p.club || p.club==='Raviart');
     tbody.innerHTML='';
-    if(!Array.isArray(data) || data.length===0){ tbody.innerHTML='<tr><td colspan="4">Aucun post</td></tr>'; return; }
+    if(!Array.isArray(data) || data.length===0){ tbody.innerHTML='<tr><td colspan="3">Aucun post</td></tr>'; return; }
     data.forEach(p=>{
       const tr=document.createElement('tr');
       const short=p.facebook_url.length>40?p.facebook_url.slice(0,40)+"...":p.facebook_url;
       const d=p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):"";
-      const club=p.club||"Raviart";
-      const badge=club==='Tournai'?'🔵 Tournai':'🔴 Raviart';
-      tr.innerHTML=`<td>${badge}</td><td title="${p.facebook_url}"><a href="${p.facebook_url}" target="_blank">${short}</a></td><td>${d}</td><td><button onclick="deletePost(${p.id})" style="color:#991b1b;border:1px solid #d1a0a0;background:#fff;border-radius:4px;padding:2px 6px;cursor:pointer">✕</button></td>`;
+      tr.innerHTML=`<td title="${p.facebook_url}"><a href="${p.facebook_url}" target="_blank">${short}</a></td><td>${d}</td><td><button onclick="deletePost(${p.id})" style="color:#991b1b;border:1px solid #d1a0a0;background:#fff;border-radius:4px;padding:2px 6px;cursor:pointer">✕</button></td>`;
       tbody.appendChild(tr);
     });
-  }catch(e){ tbody.innerHTML='<tr><td colspan="4">Erreur</td></tr>'; }
+  }catch(e){ tbody.innerHTML='<tr><td colspan="3">Erreur</td></tr>'; }
 }
 async function addPost(){
-  const url=document.getElementById('postUrl').value.trim(), club=document.getElementById('postClub').value, out=document.getElementById('postResult');
+  const url=document.getElementById('postUrl').value.trim(), out=document.getElementById('postResult');
   if(!url || !url.includes("facebook.com")){ out.textContent="URL Facebook invalide"; return; }
   out.textContent="...";
-  // tente avec club, sinon sans si colonne pas encore créée
-  let payload={facebook_url:url, club}, ok=false, err="";
-  for(const pl of [payload, {facebook_url:url}]){
-    try{
-      const res=await fetch(SUPABASE_POSTS,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify(pl)});
-      if(res.ok){ ok=true; break; }
-      const t=await res.text();
-      if(t.includes("club")) continue;
-      err=t; break;
-    }catch(e){ err=e.message; }
-  }
-  if(ok){ out.textContent="✅ Publié"; document.getElementById('postUrl').value=""; loadPostsAdmin(); }
-  else { out.textContent="❌ Erreur. Exécute: ALTER TABLE posts ADD COLUMN club TEXT DEFAULT 'Raviart'"; console.error(err); }
+  try{
+    const res=await fetch(SUPABASE_POSTS,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({facebook_url:url, club:'Raviart'})});
+    // fallback sans club si colonne non existante
+    if(!res.ok && (await res.text()).includes("club")){
+      const r2=await fetch(SUPABASE_POSTS,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({facebook_url:url})});
+      if(!r2.ok) throw new Error(await r2.text());
+    } else if(!res.ok) throw new Error(await res.text());
+    out.textContent="✅ Publié"; document.getElementById('postUrl').value="";
+    loadPostsAdmin();
+  }catch(e){ out.textContent="❌ Erreur"; console.error(e); }
 }
 async function deletePost(id){
   if(!confirm("Supprimer ce post ?")) return;
