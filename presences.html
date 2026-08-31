@@ -258,8 +258,33 @@ async function supprimerPresence(boxeurId){
     document.getElementById('result').textContent="✅ Présence annulée (Absent)";
   }catch(e){document.getElementById('result').textContent="❌ Erreur annulation";}
 }
+function extractFacebookUrl(raw){
+  if(!raw) return "";
+  raw=raw.trim();
+  // si c'est un code iframe collé par erreur, extrait le href contenu
+  if(raw.includes("<iframe")){
+    const mHref=raw.match(/href=([^&"']+)/);
+    if(mHref) try{ return decodeURIComponent(mHref[1]); }catch{ return mHref[1]; }
+    const mSrc=raw.match(/src="([^"]+)"/);
+    if(mSrc) return mSrc[1];
+  }
+  // si c'est déjà une URL plugins/video.php?href=..., extrait le vrai lien
+  if(raw.includes("plugins/video.php") && raw.includes("href=")){
+    const m=raw.match(/href=([^&]+)/);
+    if(m) try{ return decodeURIComponent(m[1]); }catch{ return m[1]; }
+  }
+  return raw;
+}
+function isValidFacebookUrl(url){
+  return url && url.startsWith("https://www.facebook.com/") && !url.includes("<") && !url.includes("plugins");
+}
 function createFbCard(p){
-  const url=p.facebook_url;
+  const raw=p.facebook_url||"";
+  const url=extractFacebookUrl(raw);
+  if(!isValidFacebookUrl(url)){
+    console.warn("Post ignoré - URL invalide:", raw);
+    return null;
+  }
   const isReel=url.includes("/reel/");
   const embedUrl=isReel?`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=267&height=476`:`https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&show_text=true&width=500`;
   const card=document.createElement('div');
@@ -269,8 +294,13 @@ function createFbCard(p){
     <div class="fb-embed" style="${isReel?'background:#000;min-height:476px':'min-height:500px'}">
       <iframe src="${embedUrl}" width="${isReel?267:500}" height="${isReel?476:600}" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
     </div>
-    <div class="fb-card-actions"><a href="${url}" target="_blank" style="text-decoration:none"><button>↗ Voir sur Facebook</button></a></div>`;
+    <div class="fb-card-actions"><a href="${url}" target="_blank" style="text-decoration:none"><button>↗ Voir sur Facebook</button></a><button onclick="deletePostPresence(${p.id})" style="color:#991b1b;border:1px solid #d1a0a0;background:#fff;border-radius:4px;padding:2px 8px;cursor:pointer" title="Supprimer ce post">✕ Supprimer</button></div>`;
   return card;
+}
+async function deletePostPresence(id){
+  if(!confirm("Supprimer ce post ?")) return;
+  await fetch(`${SUPABASE_POSTS}?id=eq.${id}`,{method:'DELETE',headers:sbHeaders()});
+  loadPostsDynamic();
 }
 async function loadPostsDynamic(){
   const container=document.getElementById('postsRaviart');
@@ -287,7 +317,11 @@ async function loadPostsDynamic(){
       container.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post pour le moment</div>';
       return;
     }
-    data.forEach(p=> container.appendChild(createFbCard(p)));
+    let shown=0;
+    data.forEach(p=>{ const card=createFbCard(p); if(card){ container.appendChild(card); shown++; } });
+    if(shown===0 && data.length>0){
+      container.innerHTML='<div class="fb-card" style="padding:20px;text-align:center;background:#fff;border:1px solid #ddd">Aucun post valide (les liens iframe ont été ignorés)</div>';
+    }
   }catch(e){ container.innerHTML='<p>Erreur chargement posts</p>'; }
 }
 async function loadCalendrierDynamic(){

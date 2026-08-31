@@ -678,6 +678,26 @@ async function deleteCalEvent(id){
   loadCalendrierAdmin();
 }
 
+// ---------- FACEBOOK URL helpers (anti-iframe) ----------
+function extractFacebookUrl(raw){
+  if(!raw) return "";
+  raw=raw.trim();
+  if(raw.includes("<iframe")){
+    const mHref=raw.match(/href=([^&"']+)/);
+    if(mHref) try{ return decodeURIComponent(mHref[1]); }catch{ return mHref[1]; }
+    const mSrc=raw.match(/src="([^"]+)"/);
+    if(mSrc) return mSrc[1];
+  }
+  if(raw.includes("plugins/video.php") && raw.includes("href=")){
+    const m=raw.match(/href=([^&]+)/);
+    if(m) try{ return decodeURIComponent(m[1]); }catch{ return m[1]; }
+  }
+  return raw;
+}
+function isValidFacebookUrl(url){
+  return url && url.startsWith("https://www.facebook.com/") && !url.includes("<") && !url.includes("plugins");
+}
+
 // ---------- ADMIN POSTS ----------
 async function loadPostsAdmin(){
   const tbody=document.querySelector('#postsAdminTable tbody');
@@ -700,8 +720,15 @@ async function loadPostsAdmin(){
   }catch(e){ tbody.innerHTML='<tr><td colspan="3">Erreur</td></tr>'; }
 }
 async function addPost(){
-  const url=document.getElementById('postUrl').value.trim(), out=document.getElementById('postResult');
-  if(!url || !url.includes("facebook.com")){ out.textContent="URL Facebook invalide"; return; }
+  let url=document.getElementById('postUrl').value.trim(), out=document.getElementById('postResult');
+  // auto-correction si le client colle un code iframe au lieu de l'URL
+  const extracted=extractFacebookUrl(url);
+  if(extracted!==url){
+    url=extracted;
+    document.getElementById('postUrl').value=url;
+    out.textContent="⚠️ Code iframe détecté — URL extraite automatiquement";
+  }
+  if(!isValidFacebookUrl(url)){ out.textContent="URL invalide. Colle un lien du type https://www.facebook.com/.../posts/... ou /reel/... (pas un code <iframe>)"; return; }
   out.textContent="...";
   try{
     const res=await fetch(SUPABASE_POSTS,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({facebook_url:url, club:'Raviart'})});
