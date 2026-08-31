@@ -86,6 +86,12 @@
   .win-body{padding:18px 18px 14px}
   .win-body h3{font-size:14px;margin:0 0 10px}
   label{font-size:13px}
+  /* Zone saisie présence : police doublée (demande client) */
+  #presences label{font-size:26px !important;font-weight:700}
+  #presences input[type=text], #presences input[type=date]{font-size:26px !important;padding:10px 14px !important;border-width:2px}
+  #presences #boxeurInput{width:320px !important;font-size:26px !important}
+  #presences .suggestions{max-height:220px}
+  #presences .suggestion-item{font-size:24px !important;padding:10px 12px !important}
   select, input[type=date]{border:1px solid #aaa;border-radius:4px;padding:5px 7px;font-size:13px}
   button{border:1px solid #999;background:#efefef;border-radius:4px;padding:5px 10px;font-size:13px;cursor:pointer}
   .presence-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -107,7 +113,7 @@
 
 <div class="topbar">
   <a href="dashboard.html" class="nav-btn" title="Aller au Dashboard">⚙️</a>
-  <h1>Raviart Promotion <span>— Dashboard</span></h1>
+  <h1>Raviart Promotion <span>— Présences du jour</span></h1>
   <small id="todayLabel"></small>
 </div>
 
@@ -140,12 +146,10 @@
           </div>
           <div class="presence-btns">
             <button data-statut="Present" class="btn-present">Présent</button>
-            <button data-statut="Retard" class="btn-retard">Retard</button>
-            <button data-statut="Blessure" class="btn-blessure">Blessure</button>
-            <button data-statut="Exclusion" class="btn-exclu">Exclu</button>
             <button id="supprimerBtn" class="btn-absent">Absent ✕</button>
           </div>
-          <div id="result" style="margin-top:12px;font-weight:700;font-size:13px;min-height:18px"></div>
+          <div id="gratuitCounter" style="margin-top:10px;font-weight:700;font-size:18px;min-height:22px;color:var(--rouge);"></div>
+          <div id="result" style="margin-top:8px;font-weight:700;font-size:13px;min-height:18px"></div>
         </div>
       </section>
 
@@ -214,10 +218,29 @@ function renderSuggestions(query, sugEl, inputEl, hiddenEl){
     const div=document.createElement("div");
     div.className="suggestion-item";
     div.textContent=`${b.LastName} ${b.FirstName||""}`.trim();
-    div.addEventListener("mousedown", (e)=>{ e.preventDefault(); hiddenEl.value=b.id; inputEl.value=`${b.LastName} ${b.FirstName||""}`.trim(); sugEl.style.display="none"; });
+    div.addEventListener("mousedown", (e)=>{ e.preventDefault(); hiddenEl.value=b.id; inputEl.value=`${b.LastName} ${b.FirstName||""}`.trim(); sugEl.style.display="none"; updatePresenceGratuitCounter(b.id); });
     sugEl.appendChild(div);
   });
   sugEl.style.display="block";
+}
+async function updatePresenceGratuitCounter(boxeurId){
+  const el=document.getElementById('gratuitCounter');
+  if(!el) return;
+  if(!boxeurId){ el.textContent=''; return; }
+  el.textContent='Vérification...';
+  try{
+    const res=await fetch(`${SUPABASE_LIC}?boxeur_id=eq.${boxeurId}`,{headers:sbHeaders()});
+    const data=await res.json();
+    const l=Array.isArray(data)&&data[0]?data[0]:null;
+    if(!l || String(l.cotisationtype)!=="2"){ el.textContent=''; return; }
+    const presRes=await fetch(`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&select=id,statut`,{headers:sbHeaders()});
+    const pres=await presRes.json();
+    const used=Array.isArray(pres)?pres.filter(p=>p.statut==='Present').length:0;
+    const rem=Math.max(0,3-used);
+    if(rem>0) el.textContent=`Séances gratuites : ${rem} /3 restantes`;
+    else el.textContent=`Séances gratuites épuisées (0 /3)`;
+    el.style.color=rem>0?'#0e9f6e':'#D90429';
+  }catch(e){ el.textContent=''; }
 }
 async function loadBoxeursSelect(){
   const tryUrls = [
@@ -229,10 +252,14 @@ async function loadBoxeursSelect(){
       const res=await fetch(url,{headers:sbHeaders()});
       const data=await res.json();
       if(!Array.isArray(data)) continue;
-      const filtered = data.filter(b => b["désactivé"] !== true && b["desactive"] !== true);
+      let filtered = data.filter(b => b["désactivé"] !== true && b["desactive"] !== true);
+      if(filtered.length===0 && data.length>0){
+        console.warn('loadBoxeursSelect: tous filtrés comme désactivés, fallback vers liste complète', data.length);
+        filtered=data;
+      }
       boxeursCache=filtered;
       const inputEl=document.getElementById('boxeurInput'), hiddenEl=document.getElementById('boxeurSelect'), sugEl=document.getElementById('suggestionsBoxeur');
-      inputEl.addEventListener("input", ()=>{ hiddenEl.value=""; renderSuggestions(inputEl.value, sugEl, inputEl, hiddenEl); });
+      inputEl.addEventListener("input", ()=>{ hiddenEl.value=""; updatePresenceGratuitCounter(''); renderSuggestions(inputEl.value, sugEl, inputEl, hiddenEl); });
       inputEl.addEventListener("focus", ()=> renderSuggestions(inputEl.value, sugEl, inputEl, hiddenEl));
       inputEl.addEventListener("blur", ()=> setTimeout(()=> sugEl.style.display="none",150));
       return;
@@ -248,6 +275,7 @@ async function enregistrerPresence(boxeurId, statut){
     const res=await fetch(SUPABASE_PRESENCES,{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({boxeur_id:boxeurId,date_cours:today,statut})});
     if(!res.ok) throw new Error('insert');
     document.getElementById('result').textContent=`✅ Présence enregistrée : ${statut}`;
+    updatePresenceGratuitCounter(boxeurId);
   }catch(e){document.getElementById('result').textContent="❌ Erreur enregistrement";}
 }
 async function supprimerPresence(boxeurId){
@@ -255,6 +283,7 @@ async function supprimerPresence(boxeurId){
     const dateInput=document.getElementById('presenceDate').value;
     const today=dateInput || new Date().toISOString().split('T')[0];
     await fetch(`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&date_cours=eq.${today}`,{method:'DELETE',headers:sbHeaders()});
+    updatePresenceGratuitCounter(boxeurId);
     document.getElementById('result').textContent="✅ Présence annulée (Absent)";
   }catch(e){document.getElementById('result').textContent="❌ Erreur annulation";}
 }
@@ -344,31 +373,65 @@ async function loadCalendrierDynamic(){
   }catch(e){ container.innerHTML='Erreur chargement calendrier'; }
 }
 async function loadBoxeursNotInOrder(){
+  const tbody=document.querySelector('#notInOrderTable tbody');
+  if(!tbody) return;
   tbody.innerHTML='<tr><td colspan="3">Chargement...</td></tr>';
   try{
-    const query=`select=id,LastName,FirstName,${SUPABASE_CONFIG.TABLES.LICENCES}!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
+    const query=`select=id,LastName,FirstName,%22d%C3%A9sactiv%C3%A9%22,${SUPABASE_CONFIG.TABLES.LICENCES}!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
     const res=await fetch(`${SUPABASE_BOXEURS}?${query}`,{headers:sbHeaders()});
     const boxeurs=await res.json();
+    if(!Array.isArray(boxeurs)){
+      console.error('loadBoxeursNotInOrder: réponse inattendue', boxeurs);
+      throw new Error(boxeurs.message||'bad data');
+    }
+    // batch gratuit restants
+    const gratuitIds = boxeurs.filter(b=>{
+      const l=b.licencesetcotisations&&b.licencesetcotisations[0];
+      return l && String(l.cotisationtype)==="2" && b["désactivé"]!==true;
+    }).map(b=>b.id);
+    let gratuitMap={};
+    if(gratuitIds.length){
+      try{
+        const ids=gratuitIds.join(',');
+        const presRes=await fetch(`${SUPABASE_PRESENCES}?boxeur_id=in.(${ids})&select=boxeur_id,statut,date_cours`,{headers:sbHeaders()});
+        const pres=await presRes.json();
+        if(Array.isArray(pres)){
+          gratuitIds.forEach(id=>{
+            const start=(boxeurs.find(b=>b.id===id)?.licencesetcotisations?.[0]?.cotisationpaymentdate)||null;
+            const cnt=pres.filter(p=>p.boxeur_id===id && (p.statut==='Present') && (!start||p.date_cours>=start)).length;
+            gratuitMap[id]=Math.max(0,3-cnt);
+          });
+        }
+      }catch(e){ console.warn('gratuit batch',e); }
+    }
     tbody.innerHTML='';
     boxeurs.forEach(b=>{
+      if(b["désactivé"]===true || b["desactive"]===true) return;
       const l=b.licencesetcotisations && b.licencesetcotisations[0]?b.licencesetcotisations[0]:null;
       let licS="En cours", cotS="Non payé";
       if(l){
         licS=getLicenceStatusMessage(l.licenceregdate);
-        const type=parseInt(l.cotisationtype)||0;
-        let exp='';
-        if(type===3) exp=l.cotisationpaymentdate||new Date().toISOString().split('T')[0];
-        else if(type>0 && l.cotisationpaymentdate){ const d=new Date(l.cotisationpaymentdate); d.setMonth(d.getMonth()+type); exp=d.toISOString().split('T')[0]; }
-        cotS=getCotisationStatusMessage(l.cotisationpaymentdate,exp);
+        const rawType=String(l.cotisationtype||"");
+        if(rawType==="2"){
+          const rem=gratuitMap[b.id]!==undefined?gratuitMap[b.id]:3;
+          cotS=rem>0?rem+' /3 gratuites':'Gratuit épuisé';
+        } else {
+          const type=parseInt(rawType)||0;
+          let exp='';
+          if(type===3) exp=l.cotisationpaymentdate||new Date().toISOString().split('T')[0];
+          else if(type>0 && l.cotisationpaymentdate){ const d=new Date(l.cotisationpaymentdate); d.setMonth(d.getMonth()+type); exp=d.toISOString().split('T')[0]; }
+          cotS=getCotisationStatusMessage(l.cotisationpaymentdate,exp);
+        }
       }
-      if(!(licS==="Valide" && cotS==="Payé")){
+      const cotOk=cotS==="Payé" || cotS.includes('gratuites');
+      if(!(licS==="Valide" && cotOk)){
         const tr=document.createElement('tr');
         tr.innerHTML=`<td>${b.LastName} ${b.FirstName}</td><td>${licS}</td><td>${cotS}</td>`;
         tbody.appendChild(tr);
       }
     });
     if(!tbody.hasChildNodes()) tbody.innerHTML='<tr><td colspan="3">Tous les boxeurs sont en ordre 👍</td></tr>';
-  }catch(e){tbody.innerHTML='<tr><td colspan="3">Erreur chargement</td></tr>';}
+  }catch(e){ console.error('loadBoxeursNotInOrder error', e); tbody.innerHTML='<tr><td colspan="3">Erreur chargement</td></tr>';}
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{

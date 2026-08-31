@@ -184,11 +184,8 @@
             <div id="lineNom" style="font-weight:700;font-size:13px"></div>
             <div id="linePrenom" style="font-weight:700;font-size:13px"></div>
             <button id="desactiverBtn" title="Supprimer ce boxeur" style="display:none;margin-top:10px;background:#fff;border:1px solid #d1a0a0;color:#991b1b;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer;">🗑️ Supprimer</button>
-            <div class="kpi" id="kpiPresences">
+            <div class="kpi" id="kpiPresences" style="grid-template-columns:repeat(1,1fr)">
               <div><strong id="kpiPresent">—</strong><span>Présent</span></div>
-              <div><strong id="kpiRetard">—</strong><span>Retard</span></div>
-              <div><strong id="kpiBlessure">—</strong><span>Blessure</span></div>
-              <div><strong id="kpiExclusion">—</strong><span>Exclusion</span></div>
             </div>
             <div id="linePresences" style="display:none"></div>
           </div>
@@ -230,10 +227,10 @@
           <div class="field">Date expiration calculée: <span id="licenceexpiredate" data-prev="" style="font-weight:700"></span></div>
 
           <h3>Cotisation</h3>
-          <div class="field"><label>Type (séance / mois) : <select id="cotisationtype"><option value="">— choisir —</option><option value="3">3€ (séance)</option><option value="1">1 mois</option><option value="5">5 mois</option><option value="10">10 mois</option></select></label></div>
+          <div class="field"><label>Type (séance / mois) : <select id="cotisationtype"><option value="">— choisir —</option><option value="3">3€ (séance)</option><option value="2">Gratuit (3 séances)</option><option value="1">1 mois</option><option value="5">5 mois</option><option value="10">10 mois</option></select></label></div>
           <div class="field">Payé: <span id="cotisationstatus" class="statut wait">—</span></div>
-          <div class="field"><label>Date paiement: <input type="date" id="cotisationpaymentdate"></label></div>
-          <div class="field"><label>Date échéance: <input type="date" id="cotisationexpiredate" readonly style="background:#f3f3f3"></label></div>
+          <div class="field" id="fieldPaiement"><label>Date paiement: <input type="date" id="cotisationpaymentdate"></label></div>
+          <div class="field" id="fieldEcheance"><label>Date échéance: <input type="date" id="cotisationexpiredate" readonly style="background:#f3f3f3"></label></div>
 
           <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
             <button id="saveBtn" class="primary">Enregistrer</button>
@@ -331,7 +328,13 @@ async function getBoxeurs(){
       const j=await res.json();
       if(Array.isArray(j)) {
         // fallback client si colonne non filtrée mais présente dans les données
-        return j.filter(b => b["désactivé"] !== true && b["desactive"] !== true);
+        const filtered = j.filter(b => b["désactivé"] !== true && b["desactive"] !== true);
+        // Si tous filtrés (ex: bug données où tous désactivé=true), fallback vers liste complète pour ne pas casser l'autocomplétion
+        if(filtered.length===0 && j.length>0) {
+          console.warn('getBoxeurs: tous filtrés comme désactivés, fallback vers liste complète', j.length);
+          return j;
+        }
+        return filtered;
       }
       // si erreur type "column does not exist", on tente l'URL suivante
       if(j && j.message && j.message.includes("désactivé")) continue;
@@ -376,7 +379,7 @@ async function desactiverBoxeur(boxeurId){
   if(ok){
     document.getElementById('lineID').textContent=""; document.getElementById('lineNom').textContent=""; document.getElementById('linePrenom').textContent="";
     if(btn) btn.style.display='none';
-    ["Present","Retard","Blessure","Exclusion"].forEach(k=> document.getElementById('kpi'+k).textContent='—');
+    document.getElementById('kpiPresent').textContent='—';
     await populateSelects(); loadBoxeursNotInOrderOptimized();
   } else {
     alert("Erreur suppression — vérifie que la colonne 'désactivé' existe. Détail: "+lastErr);
@@ -420,8 +423,18 @@ function updateOverallStatus(){
   const overall=document.getElementById('overallStatus');
   const licM=lic.match(/Valide à partir du (\d{4}-\d{2}-\d{2})/);
   const cotM=cot.match(/Payé à partir du (\d{4}-\d{2}-\d{2})/);
+  const isGratuitOk = cot.includes('gratuites restantes') || cot==='3 /3 gratuites';
+  const isGratuitKo = cot.includes('Plus de gratuites');
   let txt="", cls="wait";
-  if(licM && cotM){ const d=licM[1]>cotM[1]?licM[1]:cotM[1]; txt=`En ordre à partir du ${d}`; cls="wait"; }
+  if(isGratuitKo){ txt="Pas en ordre (gratuit épuisé)"; cls="ko"; }
+  else if(isGratuitOk){
+    if(licM) txt=`En ordre (gratuit) à partir du ${licM[1]}`;
+    else if(lic==="Valide") txt="En ordre (gratuit)";
+    else txt="Pas en ordre (licence)";
+    cls=(lic==="Valide" || licM)?"ok":"ko";
+    if(licM) cls="wait";
+  }
+  else if(licM && cotM){ const d=licM[1]>cotM[1]?licM[1]:cotM[1]; txt=`En ordre à partir du ${d}`; cls="wait"; }
   else if(licM){ txt=`En ordre à partir du ${licM[1]}`; cls="wait"; }
   else if(cotM){ txt=`En ordre à partir du ${cotM[1]}`; cls="wait"; }
   else if(lic==="Valide" && cot==="Payé"){ txt="En ordre"; cls="ok"; }
@@ -447,19 +460,61 @@ function updateLicenceStatus(){
   }
   updateCotisationStatus();
 }
-function updateCotisationStatus(){
-  const type=parseInt(document.getElementById('cotisationtype').value)||0;
+async function getGratuitUsed(boxeurId, startDate){
+  if(!boxeurId) return 0;
+  let url=`${SUPABASE_PRESENCES}?boxeur_id=eq.${boxeurId}&select=id,date_cours,statut`;
+  if(startDate) url+=`&date_cours=gte.${startDate}`;
+  try{
+    const res=await fetch(url,{headers:sbHeaders()});
+    const data=await res.json();
+    if(!Array.isArray(data)) return 0;
+    return data.filter(p=>p.statut==='Present').length;
+  }catch{return 0}
+}
+async function updateCotisationStatus(){
+  const rawVal=document.getElementById('cotisationtype').value;
+  const type=parseInt(rawVal)||0;
   const today=new Date().toISOString().split('T')[0];
   const payInput=document.getElementById('cotisationpaymentdate');
+  const expireInput=document.getElementById('cotisationexpiredate');
+  const el=document.getElementById('cotisationstatus');
+  // Cas gratuit (3 séances) : pas de dates
+  if(rawVal==="2" || type===2){
+    document.getElementById('fieldPaiement').style.display='none';
+    document.getElementById('fieldEcheance').style.display='none';
+    payInput.value='';
+    expireInput.value='';
+    const boxeurId=document.getElementById('boxeurSelectLicence').value;
+    if(!boxeurId){
+      el.textContent='3 /3 gratuites';
+      el.className='statut ok';
+      updateOverallStatus();
+      return;
+    }
+    el.textContent='Calcul...';
+    el.className='statut wait';
+    const used=await getGratuitUsed(boxeurId, null);
+    const rem=Math.max(0,3-used);
+    if(rem>0){
+      el.textContent=rem+' /3 gratuites restantes';
+      el.className='statut ok';
+    } else {
+      el.textContent='0 /3 - Plus de gratuites';
+      el.className='statut ko';
+    }
+    updateOverallStatus();
+    return;
+  }
+  document.getElementById('fieldPaiement').style.display='';
+  document.getElementById('fieldEcheance').style.display='';
   let expStr='';
   if(type===3){
     const pd=payInput.value||today; expStr=pd; payInput.value=pd;
   } else if(type>0 && payInput.value){
     const exp=new Date(payInput.value); exp.setMonth(exp.getMonth()+type); expStr=exp.toISOString().split('T')[0];
   }
-  document.getElementById('cotisationexpiredate').value=expStr;
+  expireInput.value=expStr;
   const msg=getCotisationStatusMessage(payInput.value,expStr);
-  const el=document.getElementById('cotisationstatus');
   el.textContent=msg||"Non payé";
   el.className="statut "+(msg==="Payé"?"ok":msg==="Non payé"?"ko":"wait");
   updateOverallStatus();
@@ -473,6 +528,8 @@ function clearForm(){
   document.getElementById('cotisationstatus').textContent='—';
   document.getElementById('cotisationpaymentdate').value='';
   document.getElementById('cotisationexpiredate').value='';
+  document.getElementById('fieldPaiement').style.display='';
+  document.getElementById('fieldEcheance').style.display='';
   updateOverallStatus();
 }
 
@@ -550,7 +607,7 @@ async function onProfilChange(){
     document.getElementById('lineID').textContent='';
     document.getElementById('lineNom').textContent='';
     document.getElementById('linePrenom').textContent='';
-    ["Present","Retard","Blessure","Exclusion"].forEach(k=> document.getElementById('kpi'+k).textContent='—');
+    document.getElementById('kpiPresent').textContent='—';
     btn.style.display='none';
     return;
   }
@@ -560,13 +617,7 @@ async function onProfilChange(){
   document.getElementById('linePrenom').textContent="Prénom : "+(b.FirstName||'');
   if(!month) return;
   const p=await getPresencesBoxeur(boxeurId,month,"Present");
-  const r=await getPresencesBoxeur(boxeurId,month,"Retard");
-  const bl=await getPresencesBoxeur(boxeurId,month,"Blessure");
-  const e=await getPresencesBoxeur(boxeurId,month,"Exclusion");
   document.getElementById('kpiPresent').textContent=p;
-  document.getElementById('kpiRetard').textContent=r;
-  document.getElementById('kpiBlessure').textContent=bl;
-  document.getElementById('kpiExclusion').textContent=e;
 }
 
 // ---------- LICENCE LOAD/SAVE ----------
@@ -752,29 +803,59 @@ async function loadBoxeursNotInOrderOptimized(){
   const tbody=document.querySelector('#notInOrderTable tbody');
   tbody.innerHTML='<tr><td colspan="3">Chargement...</td></tr>';
   try{
-    const query=`select=id,LastName,FirstName,${SUPABASE_CONFIG.TABLES.LICENCES}!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
+    const query=`select=id,LastName,FirstName,%22d%C3%A9sactiv%C3%A9%22,${SUPABASE_CONFIG.TABLES.LICENCES}!left(id,licencetype,licenceregdate,cotisationtype,cotisationpaymentdate)`;
     const res=await fetch(`${SUPABASE_BOXEURS}?${query}`,{headers: sbHeaders()});
     const boxeurs=await res.json();
+    if(!Array.isArray(boxeurs)) throw new Error('bad data');
+    // pré-calcul gratuit restants en batch
+    const gratuitIds = boxeurs.filter(b=>{
+      const l=b.licencesetcotisations&&b.licencesetcotisations[0];
+      return l && String(l.cotisationtype)==="2" && b["désactivé"]!==true;
+    }).map(b=>b.id);
+    let gratuitMap={};
+    if(gratuitIds.length){
+      try{
+        const ids=gratuitIds.join(',');
+        const presRes=await fetch(`${SUPABASE_PRESENCES}?boxeur_id=in.(${ids})&select=boxeur_id,statut,date_cours`,{headers:sbHeaders()});
+        const pres=await presRes.json();
+        if(Array.isArray(pres)){
+          gratuitIds.forEach(id=>{
+            const start = (boxeurs.find(b=>b.id===id)?.licencesetcotisations?.[0]?.cotisationpaymentdate)||null;
+            const cnt = pres.filter(p=>p.boxeur_id===id && (p.statut==='Present') && (!start || p.date_cours>=start)).length;
+            gratuitMap[id]=Math.max(0,3-cnt);
+          });
+        }
+      }catch(e){ console.warn('gratuit batch fetch',e); }
+    }
     tbody.innerHTML='';
     boxeurs.forEach(b=>{
+      if(b["désactivé"]===true || b["desactive"]===true) return;
       const l=b.licencesetcotisations && b.licencesetcotisations[0]?b.licencesetcotisations[0]:null;
       let licS="En cours", cotS="Non payé";
       if(l){
         licS=getLicenceStatusMessage(l.licenceregdate);
-        const type=parseInt(l.cotisationtype)||0;
-        let exp='';
-        if(type===3) exp=l.cotisationpaymentdate||new Date().toISOString().split('T')[0];
-        else if(type>0 && l.cotisationpaymentdate){ const d=new Date(l.cotisationpaymentdate); d.setMonth(d.getMonth()+type); exp=d.toISOString().split('T')[0]; }
-        cotS=getCotisationStatusMessage(l.cotisationpaymentdate,exp);
+        const rawType=String(l.cotisationtype||"");
+        const type=parseInt(rawType)||0;
+        if(rawType==="2"){
+          const rem = gratuitMap[b.id]!==undefined?gratuitMap[b.id]:3;
+          cotS = rem>0 ? rem+' /3 gratuites' : 'Gratuit épuisé';
+        } else {
+          let exp='';
+          if(type===3) exp=l.cotisationpaymentdate||new Date().toISOString().split('T')[0];
+          else if(type>0 && l.cotisationpaymentdate){ const d=new Date(l.cotisationpaymentdate); d.setMonth(d.getMonth()+type); exp=d.toISOString().split('T')[0]; }
+          cotS=getCotisationStatusMessage(l.cotisationpaymentdate,exp);
+        }
       }
-      if(!(licS==="Valide" && cotS==="Payé")){
+      const isGratuitOk = cotS.includes('gratuites');
+      const cotOk = cotS==="Payé" || isGratuitOk;
+      if(!(licS==="Valide" && cotOk)){
         const tr=document.createElement('tr');
         tr.innerHTML=`<td>${b.LastName} ${b.FirstName}</td><td>${licS}</td><td>${cotS}</td>`;
         tbody.appendChild(tr);
       }
     });
     if(!tbody.hasChildNodes()) tbody.innerHTML='<tr><td colspan="3">Tous les boxeurs sont en ordre 👍</td></tr>';
-  }catch(e){tbody.innerHTML='<tr><td colspan="3">Erreur chargement</td></tr>';}
+  }catch(e){ console.error(e); tbody.innerHTML='<tr><td colspan="3">Erreur chargement</td></tr>';}
 }
 
 // ---------- INIT ----------
